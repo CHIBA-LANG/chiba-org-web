@@ -8,10 +8,11 @@ interface Props {
   ogType?: 'website' | 'article';
   ogImage?: string;
   canonicalUrl?: string;
+  keywords?: string;
 }
 
 const SITE_URL = 'https://chiba-lang.org';
-const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`;
+const DEFAULT_OG_IMAGE = `${SITE_URL}/CHIBA.png`;
 
 const {
   title,
@@ -19,6 +20,7 @@ const {
   ogType = 'website',
   ogImage = DEFAULT_OG_IMAGE,
   canonicalUrl = Astro.url.href,
+  keywords = 'Chiba, functional programming, systems programming, compiler, assembly, zero runtime, algebraic data types, continuations, row polymorphism, Rust, Zig, C++, C, Ocaml, Haskell, memory safety, deterministic',
 } = Astro.props;
 
 const fullTitle = title === 'CHIBA' ? title : `${title} — CHIBA`;
@@ -39,8 +41,8 @@ const softwareAppSchema = {
     priceCurrency: 'USD',
   },
   author: {
-    '@type': 'Organization',
-    name: 'CHIBA Software Foundation',
+    '@type': 'Person',
+    name: 'LemonHX',
     url: SITE_URL,
   },
   license: 'https://opensource.org/licenses/Apache-2.0',
@@ -57,7 +59,11 @@ const softwareAppSchema = {
     <!-- Primary Meta -->
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+    <meta name="author" content="LemonHX" />
+    <meta name="robots" content="index, follow" />
     <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" type="application/rss+xml" title="CHIBA Blog" href={`${SITE_URL}/rss.xml`} />
 
     <!-- Open Graph -->
     <meta property="og:type" content={ogType} />
