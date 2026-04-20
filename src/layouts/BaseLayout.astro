@@ -1,0 +1,97 @@
+---
+import '../styles/global.css';
+import Navbar from '../components/Navbar.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogType?: 'website' | 'article';
+  ogImage?: string;
+  canonicalUrl?: string;
+}
+
+const SITE_URL = 'https://chiba-lang.org';
+const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`;
+
+const {
+  title,
+  description = 'Metal-level functional zero runtime infrastructure for high-performance systems.',
+  ogType = 'website',
+  ogImage = DEFAULT_OG_IMAGE,
+  canonicalUrl = Astro.url.href,
+} = Astro.props;
+
+const fullTitle = title === 'CHIBA' ? title : `${title} — CHIBA`;
+
+const softwareAppSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'CHIBA',
+  applicationCategory: 'DeveloperApplication',
+  operatingSystem: 'Linux, macOS, Windows',
+  description:
+    'Metal-level functional zero runtime infrastructure. Deterministic compilation with Automated Theorem Proving for formal memory verification.',
+  url: SITE_URL,
+  softwareVersion: '0.1.2-alpha',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+  author: {
+    '@type': 'Organization',
+    name: 'CHIBA Software Foundation',
+    url: SITE_URL,
+  },
+  license: 'https://opensource.org/licenses/Apache-2.0',
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Primary Meta -->
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="CHIBA" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Google SoftwareApplication JSON-LD -->
+    <script type="application/ld+json" set:html={JSON.stringify(softwareAppSchema)} />
+
+    <!-- Theme init: run before paint to avoid flash -->
+    <script is:inline>
+      (function () {
+        var saved = localStorage.getItem('chiba-theme');
+        var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+  </head>
+  <body class="min-h-screen bg-chiba-bg text-chiba-text selection:bg-chiba-green selection:text-chiba-bg">
+    <Navbar />
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,97 @@
+---
+const navItems = [
+  { label: 'Docs', href: 'https://github.com/chiba-lang' },
+  { label: 'Specs', href: 'https://github.com/chiba-lang' },
+  { label: 'Compiler', href: 'https://github.com/chiba-lang' },
+  { label: 'Blog', href: '/blog' },
+];
+---
+
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 md:px-10 py-6 bg-chiba-bg/95 backdrop-blur-md border-b border-chiba-container-high">
+  <a href="/" class="flex items-center gap-2 text-2xl font-black tracking-tighter text-chiba-green uppercase font-space">
+    <img src="/favicon.svg" alt="Chiba Logo" class="w-6 h-6" />
+    CHIBA
+    <span class="font-light text-chiba-gray text-lg ml-1 lowercase">v0.1</span>
+  </a>
+
+  <nav class="hidden md:flex items-center gap-10">
+    {navItems.map((item) => (
+      <a
+        href={item.href}
+        class={`text-chiba-gray font-sans tracking-tight font-medium text-sm hover:text-chiba-green transition-colors`}
+      >
+        {item.label}
+      </a>
+    ))}
+  </nav>
+
+  <div class="flex items-center gap-4">
+    <!-- RSS link -->
+    <a
+      href="/rss.xml"
+      aria-label="RSS Feed"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="w-9 h-9 rounded-xl border border-chiba-container-high bg-chiba-container flex items-center justify-center text-chiba-gray hover:text-chiba-green hover:border-chiba-green/40 transition-all"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 11a9 9 0 0 1 9 9"/>
+        <path d="M4 4a16 16 0 0 1 16 16"/>
+        <circle cx="5" cy="19" r="1" fill="currentColor" stroke="none"/>
+      </svg>
+    </a>
+    <!-- Theme toggle -->
+    <button
+      id="theme-toggle"
+      aria-label="Toggle theme"
+      class="w-9 h-9 rounded-xl border border-chiba-container-high bg-chiba-container flex items-center justify-center text-chiba-gray hover:text-chiba-green hover:border-chiba-green/40 transition-all"
+    >
+      <!-- Moon icon (shown in dark mode) -->
+      <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+      <!-- Sun icon (shown in light mode) -->
+      <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<script>
+  function initThemeToggle() {
+    const btn = document.getElementById('theme-toggle');
+    const moon = document.getElementById('icon-moon');
+    const sun = document.getElementById('icon-sun');
+    if (!btn || !moon || !sun) return;
+
+    function applyTheme(theme: string) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('chiba-theme', theme);
+      if (theme === 'light') {
+        moon!.classList.add('hidden');
+        sun!.classList.remove('hidden');
+      } else {
+        sun!.classList.add('hidden');
+        moon!.classList.remove('hidden');
+      }
+    }
+
+    // Sync icons with current theme
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    applyTheme(current);
+
+    btn.addEventListener('click', () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      applyTheme(next);
+    });
+  }
+
+  // Run on initial load and after view transitions
+  initThemeToggle();
+  document.addEventListener('astro:after-swap', initThemeToggle);
+</script>

@@ -1,114 +1,57 @@
 ---
-import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
-import BaseHead from '../../components/BaseHead.astro';
-import Footer from '../../components/Footer.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
-import Header from '../../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 
 const posts = (await getCollection('blog')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 );
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<style>
-			main {
-				width: 960px;
-			}
-			ul {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
-				list-style-type: none;
-				margin: 0;
-				padding: 0;
-			}
-			ul li {
-				width: calc(50% - 1rem);
-			}
-			ul li * {
-				text-decoration: none;
-				transition: 0.2s ease;
-			}
-			ul li:first-child {
-				width: 100%;
-				margin-bottom: 1rem;
-				text-align: center;
-			}
-			ul li:first-child img {
-				width: 100%;
-			}
-			ul li:first-child .title {
-				font-size: 2.369rem;
-			}
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: 12px;
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: rgb(var(--black));
-				line-height: 1;
-			}
-			.date {
-				margin: 0;
-				color: rgb(var(--gray));
-			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: rgb(var(--accent));
-			}
-			ul a:hover img {
-				box-shadow: var(--box-shadow);
-			}
-			@media (max-width: 720px) {
-				ul {
-					gap: 0.5em;
-				}
-				ul li {
-					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
-				}
-			}
-		</style>
-	</head>
-	<body>
-		<Header />
-		<main>
-			<section>
-				<ul>
-					{
-						posts.map((post) => (
-							<li>
-								<a href={`/blog/${post.id}/`}>
-									{post.data.heroImage && (
-										<Image width={720} height={360} src={post.data.heroImage} alt="" />
-									)}
-									<h4 class="title">{post.data.title}</h4>
-									<p class="date">
-										<FormattedDate date={post.data.pubDate} />
-									</p>
-								</a>
-							</li>
-						))
-					}
-				</ul>
-			</section>
-		</main>
-		<Footer />
-	</body>
-</html>
+<BaseLayout
+  title="Blog"
+  description="Latest insights from the CHIBA team on deterministic systems, formal verification, and compiler engineering."
+>
+  <main class="max-w-5xl mx-auto px-6 pt-36 pb-24">
+    <div class="mb-16">
+      <div class="text-[10px] font-bold uppercase tracking-widest text-chiba-gray mb-4">CHIBA / INSIGHTS</div>
+      <h1 class="font-space text-5xl md:text-6xl font-bold tracking-tighter text-chiba-text mb-4">Latest Insights</h1>
+      <p class="text-chiba-text-dim text-lg">Tracking the frontier of deterministic systems engineering.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {posts.map((post) => (
+        <a href={`/blog/${post.id}`} class="block group">
+          <div class="bg-chiba-container border border-chiba-container-high rounded-[24px] p-6 h-full hover:border-chiba-green/30 transition-all">
+            {post.data.heroImage && (
+              <img
+                src={post.data.heroImage}
+                alt={post.data.title}
+                class="w-full h-40 object-cover rounded-2xl mb-4"
+              />
+            )}
+            <div class="text-[10px] font-bold uppercase tracking-widest text-chiba-gray mb-3">
+              <FormattedDate date={post.data.pubDate} />
+            </div>
+            <h2 class="text-xl font-space font-bold text-chiba-text group-hover:text-chiba-green transition-colors mb-2 leading-tight">
+              {post.data.title}
+            </h2>
+            {post.data.description && (
+              <p class="text-xs text-chiba-text-dim leading-relaxed">{post.data.description}</p>
+            )}
+            <div class="mt-4 text-[10px] text-chiba-gray font-bold uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all">
+              Read
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </main>
+
+  <footer class="border-t border-chiba-container-high py-8 text-center">
+    <p class="text-[10px] text-chiba-gray uppercase tracking-widest">
+      &copy; {new Date().getFullYear()} CHIBA Software Foundation
+    </p>
+  </footer>
+</BaseLayout>

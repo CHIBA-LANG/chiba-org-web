@@ -1,0 +1,18 @@
+---
+import { Image } from 'astro:assets';
+import grayscale from '../assets/grayscale.jpg';
+import BentoCard from './BentoCard.astro';
+---
+
+<section class="col-span-1 md:col-span-4">
+  <BentoCard class="h-[200px] flex items-center justify-center bg-chiba-container relative overflow-hidden group">
+    <div class="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity">
+      <Image src={grayscale} alt="" class="w-full h-full object-cover" />
+    </div>
+    <div class="relative z-10 text-center">
+      <div class="bg-black/80 backdrop-blur-md border border-white/10 px-8 py-6 rounded-2xl group-hover:scale-105 transition-transform duration-500">
+        <p class="font-space text-2xl md:text-3xl font-bold tracking-[0.4em] uppercase text-chiba-text">Think FP Run in ASM</p>
+      </div>
+    </div>
+  </BentoCard>
+</section>

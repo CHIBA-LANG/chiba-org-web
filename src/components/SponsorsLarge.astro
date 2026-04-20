@@ -1,0 +1,54 @@
+---
+import BentoCard from './BentoCard.astro';
+import Label from './Label.astro';
+
+const sponsors = [
+  // { name: 'Nebula Dynamics', tier: 'Platinum' },
+  // { name: 'Void Collective', tier: 'Platinum' },
+  // { name: 'Kyoto Systems', tier: 'Gold Plus' },
+  // { name: 'Aether Grid', tier: 'Gold' },
+  // { name: 'Stark Logic', tier: 'Gold' },
+  // { name: 'Omni Labs', tier: 'Silver' },
+  // { name: 'Root Shell', tier: 'Silver' },
+  // { name: 'Core Node', tier: 'Silver' },
+  // { name: 'Logic Gate', tier: 'Bronze' },
+  // { name: 'Ether Spec', tier: 'Bronze' },
+  // { name: 'Async Labs', tier: 'Bronze' },
+  // { name: 'Dev Mirror', tier: 'OSS' },
+  { name: 'LemonHX', tier: 'Author' },
+];
+---
+
+<section class="col-span-1 md:col-span-4">
+  <BentoCard class="bg-chiba-container relative overflow-hidden">
+    <div class="absolute inset-0 opacity-5 pointer-events-none circuit-bg"></div>
+    <div class="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto mb-16">
+      <Label>Financial Backbone</Label>
+      <h3 class="text-4xl md:text-5xl font-space font-bold uppercase tracking-tighter mb-4 italic">Corporate Sponsors</h3>
+      <p class="text-sm md:text-lg text-chiba-gray leading-relaxed">
+        The following companies provide direct financial support to the CHIBA Software Foundation,
+        enabling us to pay core contributors and maintain a neutral toolchain.
+      </p>
+    </div>
+    <div class="relative z-10 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-16">
+      {sponsors.map((s) => (
+        <div class="flex flex-col items-center justify-center p-8 rounded-3xl bg-black/40 border border-chiba-container-high/50 hover:border-chiba-green/30 transition-all group grayscale hover:grayscale-0">
+          <div class="w-10 h-10 bg-chiba-gray/10 rounded-full mb-4 flex items-center justify-center group-hover:bg-chiba-green/10 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-chiba-gray group-hover:text-chiba-green transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          </div>
+          <span class="text-[10px] font-bold text-chiba-text text-center uppercase tracking-tighter group-hover:text-chiba-green transition-colors">{s.name}</span>
+          <span class="text-[7px] font-black text-chiba-gray/60 uppercase tracking-[0.3em] mt-2 group-hover:text-chiba-green/60">{s.tier}</span>
+        </div>
+      ))}
+    </div>
+    <div class="relative z-10 p-8 bg-chiba-green/5 border border-chiba-green/10 rounded-[32px] flex flex-col md:flex-row justify-between items-center gap-8">
+      <div class="text-center md:text-left">
+        <h4 class="text-lg font-space font-bold uppercase mb-1">Empower the Future</h4>
+        <p class="text-xs text-chiba-gray">Sponsorship ensures CHIBA remains a permanent fixture of the systems programming landscape.</p>
+      </div>
+      <button class="whitespace-nowrap px-10 py-5 bg-chiba-green text-chiba-bg font-space font-bold text-sm uppercase tracking-widest hover:bg-white transition-all active:scale-95 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+        Become a Corporate Sponsor
+      </button>
+    </div>
+  </BentoCard>
+</section>

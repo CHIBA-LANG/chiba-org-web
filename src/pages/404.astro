@@ -1,0 +1,39 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="404 — Not Found" description="The page you're looking for doesn't exist.">
+  <main class="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+    <img src="/chiba.svg" alt="Chiba" class="w-16 h-16 mb-8 opacity-60" />
+
+    <div class="text-[10px] font-bold uppercase tracking-widest text-chiba-gray mb-4">
+      CHIBA / ERROR
+    </div>
+
+    <h1 class="font-space text-8xl md:text-9xl font-black tracking-tighter text-chiba-green mb-4">
+      404
+    </h1>
+
+    <p class="text-chiba-text-dim text-lg mb-2 max-w-md">
+      This page doesn't exist — or was moved.
+    </p>
+    <p class="text-chiba-gray text-xs font-mono mb-12">
+      <span class="text-chiba-green">error</span>: path not found in static routes
+    </p>
+
+    <div class="flex items-center gap-4">
+      <a
+        href="/"
+        class="px-5 py-2.5 rounded-xl bg-chiba-green text-black text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity"
+      >
+        Go Home
+      </a>
+      <a
+        href="/blog"
+        class="px-5 py-2.5 rounded-xl border border-chiba-container-high text-chiba-gray text-xs font-bold uppercase tracking-widest hover:border-chiba-green/40 hover:text-chiba-green transition-all"
+      >
+        Browse Blog
+      </a>
+    </div>
+  </main>
+</BaseLayout>

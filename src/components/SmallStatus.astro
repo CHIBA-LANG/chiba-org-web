@@ -1,0 +1,16 @@
+---
+import BentoCard from './BentoCard.astro';
+import Label from './Label.astro';
+---
+<section class="hidden lg:flex lg:col-span-1">
+  <BentoCard class="flex flex-col justify-center items-center text-center gap-6 bg-chiba-container">
+    <Label>Structure / Void</Label>
+    <div class="grid grid-cols-1 gap-8 items-center py-8">
+      <div class="w-12 h-12 bg-chiba-green rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] animate-pulse"></div>
+      <div class="w-12 h-12 bg-chiba-container-high rounded-xl"></div>
+      <div class="w-12 h-12 bg-chiba-container-high rounded-xl"></div>
+      <div class="w-12 h-12 bg-chiba-container-high rounded-xl"></div>
+    </div>
+    <p class="text-[10px] uppercase tracking-[0.3em] text-chiba-gray font-bold">Lattice Alignment: ON</p>
+  </BentoCard>
+</section>

@@ -1,0 +1,35 @@
+---
+import BentoCard from './BentoCard.astro';
+import Label from './Label.astro';
+---
+
+<section class="col-span-1 md:col-span-2">
+  <BentoCard class="bg-linear-to-br from-chiba-bg to-chiba-container border-chiba-green/40">
+    <Label>Labs / Commercial Wing</Label>
+    <h3 class="text-2xl font-space font-bold uppercase mb-4 tracking-tighter text-chiba-green">Chiba Labs</h3>
+    <p class="text-sm text-chiba-text-dim leading-relaxed mb-8">
+      Chiba Labs(not yet) provides commercial support and proprietary extensions to fund the core protocol's longevity.
+      We specialize in industry-grade optimization and neural computation.
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      <div class="p-5 bg-black/60 border border-chiba-green/20 rounded-2xl hover:border-chiba-green/50 transition-all cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-chiba-green mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        <h4 class="text-xs font-bold text-chiba-text uppercase mb-2">Compiler O3</h4>
+        <p class="text-[10px] text-chiba-gray leading-relaxed">Advanced profile-guided optimizations for enterprise-scale deployments.</p>
+      </div>
+      <div class="p-5 bg-black/60 border border-chiba-green/20 rounded-2xl hover:border-chiba-green/50 transition-all cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-chiba-green mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>
+        <h4 class="text-xs font-bold text-chiba-text uppercase mb-2">Neural Lib</h4>
+        <p class="text-[10px] text-chiba-gray leading-relaxed">Deterministic AI libraries with formal tensor verification for safety-critical inference.</p>
+      </div>
+    </div>
+    <div class="flex items-baseline gap-4">
+      <button class="flex-1 py-4 bg-chiba-green text-chiba-bg font-space font-bold text-xs uppercase tracking-widest hover:bg-white transition-all active:scale-95">
+        Enterprise Licensing
+      </button>
+      <button class="flex-1 py-4 border border-chiba-green/30 text-xs font-bold uppercase tracking-widest text-chiba-green hover:bg-chiba-green/10 transition-all">
+        Contact Chiba Labs
+      </button>
+    </div>
+  </BentoCard>
+</section>

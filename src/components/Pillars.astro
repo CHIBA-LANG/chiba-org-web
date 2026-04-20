@@ -1,0 +1,40 @@
+---
+import BentoCard from './BentoCard.astro';
+import Label from './Label.astro';
+
+const pillars = [
+  {
+    title: 'Native',
+    desc: 'No LLVM. No LibC. Proprietary self-hosting x86_64 backend.',
+    detail: 'Every instruction is emitted with binary precision.',
+    iconPath: '<path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>',
+  },
+  {
+    title: 'Logic',
+    desc: 'Automated Theorem Proving tracks lifetimes and ownership.',
+    detail: 'Safety without a GC or reference counting.',
+    iconPath: '<circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>',
+  },
+  {
+    title: 'Resilience',
+    desc: 'Continuation Parser treats AST as stream of resumable events.',
+    detail: 'Perfect completions even with broken syntax.',
+    iconPath: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  },
+];
+---
+
+<section class="col-span-1 md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+  {pillars.map((p) => (
+    <BentoCard class="hover:bg-chiba-container-low transition-colors group">
+      <div class="flex items-center gap-4 mb-6">
+        <div class="w-10 h-10 bg-chiba-green/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-chiba-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={p.iconPath} />
+        </div>
+        <h3 class="font-space text-lg font-bold tracking-tight uppercase leading-none">{p.title}</h3>
+      </div>
+      <p class="text-sm text-chiba-text-dim leading-relaxed mb-4">{p.desc}</p>
+      <p class="text-[11px] text-chiba-gray italic border-t border-chiba-container-high pt-4">{p.detail}</p>
+    </BentoCard>
+  ))}
+</section>

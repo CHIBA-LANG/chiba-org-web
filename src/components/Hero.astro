@@ -1,0 +1,49 @@
+---
+import BentoCard from './BentoCard.astro';
+import Label from './Label.astro';
+---
+
+<section class="col-span-1 md:col-span-4 lg:col-span-3">
+  <BentoCard class="flex flex-col justify-between min-h-[500px] bg-linear-to-br from-chiba-container to-chiba-bg">
+    <div class="absolute top-0 right-0 w-full h-full opacity-5 circuit-bg pointer-events-none"></div>
+
+    <div class="relative z-10">
+      <Label>SYST. ARCH / STACK V0.1 / BOOTSTRAPPED</Label>
+      <h1 class="font-space text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter leading-none mb-8 text-chiba-text">
+        Metal-level <br />
+        Functional <br />
+        <span class="text-chiba-green">Zero Runtime.</span>
+      </h1>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+      <div class="bg-white/5 backdrop-blur-md border border-white/5 rounded-2xl p-6">
+        <Label>Manifesto</Label>
+        <p class="text-lg leading-relaxed text-chiba-text-dim">
+          Deterministic compilation and formal memory verification via Automated Theorem Proving.
+        </p>
+      </div>
+      <div class="flex flex-col gap-4">
+        <div class="bg-chiba-bg/50 border border-chiba-container-high rounded-xl p-4 flex justify-between items-center">
+          <span class="text-xs uppercase tracking-widest text-chiba-gray font-bold">Binary Size</span>
+          <span class="text-xl font-bold font-space text-chiba-text">4.2 KB</span>
+        </div>
+        <div class="bg-chiba-bg/50 border border-chiba-container-high rounded-xl p-4 flex justify-between items-center">
+          <span class="text-xs uppercase tracking-widest text-chiba-gray font-bold">Safety</span>
+          <span class="text-xl font-bold font-space text-chiba-green">ATP-VERIFIED</span>
+        </div>
+        <button class="w-full bg-chiba-green text-chiba-bg font-space font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-white transition-all transform active:scale-95 group">
+          GET STARTED
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <div class="flex justify-between items-center px-2">
+          <span class="text-[10px] text-chiba-gray font-bold uppercase tracking-[0.2em]">Latest stable</span>
+          <div class="flex items-center gap-2">
+            <div class="w-1.5 h-1.5 bg-chiba-green rounded-full pulse"></div>
+            <span class="text-xs font-mono text-chiba-text-dim">v0.1.2-alpha</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </BentoCard>
+</section>

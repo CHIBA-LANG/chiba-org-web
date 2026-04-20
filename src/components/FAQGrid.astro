@@ -1,0 +1,19 @@
+---
+import BentoCard from './BentoCard.astro';
+
+const faqs = [
+  { q: 'Tail-Call Opt.', a: 'ATP proves stack depth bounds at compile-time.' },
+  { q: 'Uniqueness', a: 'Tracks resources through function boundaries.' },
+  { q: 'No LLVM', a: 'Built for deterministic cycle-by-cycle control.' },
+  { q: 'Continuations', a: 'Parser resumes from valid sync points locally.' },
+];
+---
+
+<section class="col-span-1 md:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+  {faqs.map((f) => (
+    <BentoCard class="bg-chiba-container-low/50">
+      <h4 class="font-space text-xs font-bold text-chiba-green uppercase mb-3">{f.q}</h4>
+      <p class="text-xs text-chiba-gray leading-relaxed font-medium">{f.a}</p>
+    </BentoCard>
+  ))}
+</section>
