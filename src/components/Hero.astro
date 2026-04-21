@@ -1,49 +1,97 @@
 ---
-import BentoCard from './BentoCard.astro';
-import Label from './Label.astro';
+import ShakuhachiStack from './ShakuhachiStack.astro';
+
+const stats = [
+  { k: 'binary',   v: '4.2 KB' },
+  { k: 'deps',     v: '0' },
+  { k: 'bootstrap',   v: '8s' },
+  { k: 'host',     v: 'self' },
+];
 ---
 
-<section class="col-span-1 md:col-span-4 lg:col-span-3">
-  <BentoCard class="flex flex-col justify-between min-h-[500px] bg-linear-to-br from-chiba-container to-chiba-bg">
-    <div class="absolute top-0 right-0 w-full h-full opacity-5 circuit-bg pointer-events-none"></div>
-
-    <div class="relative z-10">
-      <Label>SYST. ARCH / STACK V0.1 / BOOTSTRAPPED</Label>
-      <h1 class="font-space text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter leading-none mb-8 text-chiba-text">
-        Metal-level <br />
-        Functional <br />
-        <span class="text-chiba-green">Zero Runtime.</span>
-      </h1>
+<section class="col-span-1 md:col-span-4">
+  <div class="relative border border-chiba-line bg-chiba-container overflow-hidden">
+    <!-- ascii top rule -->
+    <div class="ascii-rule text-[10px] px-4 pt-3 flex items-center gap-3">
+      <span class="text-chiba-gray">┌─ syst.arch / level-0 bootstrapped</span>
+      <span class="flex-1 text-chiba-line">─────────────────────────────────────────────────────────────────────────────────────────────────────</span>
+      <span class="text-chiba-gray">┐</span>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-      <div class="bg-white/5 backdrop-blur-md border border-white/5 rounded-2xl p-6">
-        <Label>Manifesto</Label>
-        <p class="text-lg leading-relaxed text-chiba-text-dim">
-          Deterministic compilation and formal memory verification via Automated Theorem Proving.
-        </p>
-      </div>
-      <div class="flex flex-col gap-4">
-        <div class="bg-chiba-bg/50 border border-chiba-container-high rounded-xl p-4 flex justify-between items-center">
-          <span class="text-xs uppercase tracking-widest text-chiba-gray font-bold">Binary Size</span>
-          <span class="text-xl font-bold font-space text-chiba-text">4.2 KB</span>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-0 min-h-[560px]">
+      <!-- ── LEFT ───────────────────────────────────────────── -->
+      <div class="lg:col-span-7 p-8 md:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-chiba-line relative">
+        <div class="absolute inset-0 scan-grid opacity-[0.07] pointer-events-none"></div>
+
+        <div class="relative z-10">
+          <h1 class="font-sans font-bold uppercase tracking-[-0.04em] leading-[0.92] text-chiba-text text-6xl md:text-7xl lg:text-[8.5rem]">
+            Metal-level FP<br/>
+            <span class="text-chiba-green">Zero Runtime.</span>
+          </h1>
+
+          <!-- etymology / chiba origin (left side, primary) -->
+          <div class="mt-10 inline-flex flex-col font-mono text-[12px] leading-[1.5] text-chiba-text-dim border-l-2 border-chiba-green pl-4 py-1 max-w-xl">
+            <span><span class="text-chiba-text">CHIBA</span> <span class="text-chiba-gray">/tʃiːbɑː/</span> <span class="text-chiba-gray">←</span> <span class="text-chiba-green">尺八</span> <span class="text-chiba-gray">·</span> shakuhachi</span>
+            <span class="text-chiba-gray">a five-holed bamboo flute. one breath. one tone. no waste.</span>
+          </div>
         </div>
-        <div class="bg-chiba-bg/50 border border-chiba-container-high rounded-xl p-4 flex justify-between items-center">
-          <span class="text-xs uppercase tracking-widest text-chiba-gray font-bold">Safety</span>
-          <span class="text-xl font-bold font-space text-chiba-green">ATP-VERIFIED</span>
-        </div>
-        <button class="w-full bg-chiba-green text-chiba-bg font-space font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-white transition-all transform active:scale-95 group">
-          GET STARTED
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </button>
-        <div class="flex justify-between items-center px-2">
-          <span class="text-[10px] text-chiba-gray font-bold uppercase tracking-[0.2em]">Latest stable</span>
-          <div class="flex items-center gap-2">
-            <div class="w-1.5 h-1.5 bg-chiba-green rounded-full pulse"></div>
-            <span class="text-xs font-mono text-chiba-text-dim">v0.1.2-alpha</span>
+
+        <div class="relative z-10 mt-12">
+          <!-- stat strip -->
+          <div class="grid grid-cols-4 border-t border-chiba-line">
+            {stats.map((s, i) => (
+              <div class={`p-4 ${i < stats.length - 1 ? 'border-r border-chiba-line' : ''}`}>
+                <div class="font-mono text-[9px] uppercase tracking-[0.25em] text-chiba-gray mb-2">{s.k}</div>
+                <div class="font-mono text-lg font-medium text-chiba-text">{s.v}</div>
+              </div>
+            ))}
+          </div>
+
+          <!-- buttons -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 border-t border-chiba-line">
+            <a href="https://github.com/chiba-lang"
+               class="group flex items-center justify-between gap-2 px-6 py-5 bg-chiba-green text-chiba-bg font-mono text-sm font-semibold uppercase tracking-[0.15em] hover:bg-chiba-text transition-colors">
+              <span>get started</span>
+              <span class="font-mono">─→</span>
+            </a>
+            <a href="https://github.com/chiba-lang"
+               class="group flex items-center justify-between gap-2 px-6 py-5 border-t sm:border-t-0 sm:border-l border-chiba-line text-chiba-text font-mono text-sm font-semibold uppercase tracking-[0.15em] hover:bg-chiba-container-high transition-colors">
+              <span>view on github</span>
+              <span class="font-mono text-chiba-gray group-hover:text-chiba-green transition-colors">↗</span>
+            </a>
+          </div>
+
+          <div class="flex justify-between items-center px-1 pt-4 font-mono text-[10px] tracking-[0.2em] uppercase text-chiba-gray">
+            <span>latest stable</span>
+            <span class="flex items-center gap-2 text-chiba-text-dim">
+              <span class="w-1 h-1 bg-chiba-green pulse"></span>
+              v0.6.13
+            </span>
           </div>
         </div>
       </div>
+
+      <!-- ── RIGHT (WebGL, PC only) ─────────────────────────── -->
+      <div class="lg:col-span-5 relative bg-chiba-bg overflow-hidden hidden lg:block">
+        <div class="absolute inset-0 scan-grid opacity-[0.04] pointer-events-none"></div>
+
+        <!-- corner markers -->
+        <div class="absolute top-3 left-3 font-mono text-[10px] text-chiba-gray uppercase tracking-[0.2em] z-10">
+          structure / void
+        </div>
+        <div class="absolute bottom-3 right-3 font-mono text-[10px] text-chiba-gray uppercase tracking-[0.2em] z-10 text-right">
+          chiba.stack · 6 layers
+        </div>
+
+        <ShakuhachiStack />
+      </div>
     </div>
-  </BentoCard>
+
+    <!-- ascii bottom rule -->
+    <div class="ascii-rule text-[10px] px-4 pb-3 flex items-center gap-3">
+      <span class="text-chiba-gray">└─</span>
+      <span class="flex-1 text-chiba-line">─────────────────────────────────────────────────────────────────────────────────────────────────────</span>
+      <span class="text-chiba-gray">─┘</span>
+    </div>
+  </div>
 </section>

@@ -1,22 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-space: "Space Grotesk", sans-serif;
-  --font-mono: "Menlo", "Monaco", "Lucida Console", monospace;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-space: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Menlo", "Monaco", monospace;
 
-  --color-chiba-green: #10b981;
-  --color-chiba-green-dark: #064e3b;
-  --color-chiba-bg: #09090b;
-  --color-chiba-gray: #71717a;
-  --color-chiba-text: #fafafa;
-  --color-chiba-text-dim: #a1a1aa;
-  --color-chiba-container: #18181b;
-  --color-chiba-container-low: #1c1c20;
-  --color-chiba-container-high: #27272a;
+  --color-chiba-green: #00E676;
+  --color-chiba-green-dark: #00351b;
+  --color-chiba-bg: #07070a;
+  --color-chiba-gray: #6b6b75;
+  --color-chiba-text: #f5f5f5;
+  --color-chiba-text-dim: #9a9aa3;
+  --color-chiba-container: #07070a;
+  --color-chiba-container-low: #0b0b10;
+  --color-chiba-container-high: #11111a;
+  --color-chiba-line: #1f1f28;
 
-  --radius-bento: 24px;
+  --radius-bento: 0px;
 }
 
 @layer base {
@@ -69,15 +70,16 @@
 
 /* ── Light (Day) theme ─────────────────────────────────────────── */
 [data-theme="light"] {
-  --color-chiba-bg: #f4f4f5;
-  --color-chiba-text: #18181b;
-  --color-chiba-text-dim: #52525b;
-  --color-chiba-gray: #a1a1aa;
+  --color-chiba-bg: #ffffff;
+  --color-chiba-text: #0a0a0d;
+  --color-chiba-text-dim: #45454d;
+  --color-chiba-gray: #666666;
   --color-chiba-container: #ffffff;
-  --color-chiba-container-low: #f9f9fb;
-  --color-chiba-container-high: #e4e4e7;
-  --color-chiba-green: #059669;
-  --color-chiba-green-dark: #d1fae5;
+  --color-chiba-container-low: #fafafb;
+  --color-chiba-container-high: #fafafa;
+  --color-chiba-line: #d4d4d8;
+  --color-chiba-green: #00a85a;
+  --color-chiba-green-dark: #b8f3d2;
 }
 
 [data-theme="light"] .circuit-bg {
@@ -117,16 +119,67 @@
 /* Hover overrides for light mode */
 [data-theme="light"] .hover\:bg-white:hover {
   background-color: #18181b !important;
-  color: #f4f4f5 !important;
+  color: #ffffff !important;
 }
 [data-theme="light"] .hover\:text-white:hover {
   color: #18181b !important;
 }
 
 .circuit-bg {
-  background-image: radial-gradient(#1a1a1a 1px, transparent 1px);
+  background-image: radial-gradient(var(--color-chiba-line) 1px, transparent 1px);
   background-size: 24px 24px;
 }
+
+/* ── Brutalist grain / noise overlay ───────────────────────────── */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0.18;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+[data-theme="light"] .grain::after {
+  opacity: 0.10;
+  mix-blend-mode: multiply;
+}
+
+/* ── Scanline grid background ──────────────────────────────────── */
+.scan-grid {
+  background-image:
+    linear-gradient(to right, var(--color-chiba-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-chiba-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: -1px -1px;
+}
+[data-theme="dark"] .scan-grid,
+:root:not([data-theme="light"]) .scan-grid {
+  opacity: 0.35;
+}
+
+/* ── ASCII frame helpers ───────────────────────────────────────── */
+.ascii-frame {
+  font-family: var(--font-mono);
+  white-space: pre;
+  color: var(--color-chiba-gray);
+  letter-spacing: 0;
+  line-height: 1;
+}
+.ascii-rule {
+  font-family: var(--font-mono);
+  color: var(--color-chiba-line);
+  white-space: nowrap;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── Sharp edges everywhere (kill leftover rounded utilities) ───── */
+.no-radius, .no-radius * { border-radius: 0 !important; }
+
+/* Selection */
+::selection { background: var(--color-chiba-green); color: var(--color-chiba-bg); }
 
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(20px); }
@@ -157,11 +210,12 @@
 .prose h3 { @apply text-xl mt-8 mb-2; }
 .prose p { @apply mb-4 leading-relaxed; }
 .prose a { @apply text-chiba-green hover:underline; }
-.prose code { @apply bg-chiba-container px-1.5 py-0.5 rounded text-sm font-mono text-chiba-green; }
-.prose pre { @apply bg-black border border-chiba-container-high rounded-xl p-6 overflow-x-auto mb-6; }
+.prose code { @apply bg-chiba-container px-1.5 py-0.5 text-sm font-mono text-chiba-green border border-chiba-line; }
+.prose pre { @apply bg-black border border-chiba-line p-6 overflow-x-auto mb-6; }
 .prose pre code { @apply bg-transparent p-0 text-chiba-text-dim; }
 .prose ul, .prose ol { @apply mb-4 pl-6; }
 .prose li { @apply mb-1; }
-.prose blockquote { @apply border-l-4 border-chiba-green/50 pl-6 italic text-chiba-gray my-6; }
-.prose img { @apply rounded-2xl w-full my-6; }
-.prose hr { @apply border-chiba-container-high my-8; }
+.prose blockquote { @apply border-l-4 border-chiba-green/50 pl-6 text-chiba-gray my-6 bg-chiba-container-low py-4; }
+.prose img { @apply w-full my-6 border border-chiba-line; }
+.prose hr { @apply border-chiba-line my-8; }
+.prose h1, .prose h2, .prose h3, .prose h4 { text-transform: uppercase; }

@@ -1,0 +1,29 @@
+---
+// PC-only dot-matrix canvas. Pure 2D rendering, no WebGL dependency.
+// Mobile/touch users see nothing by design.
+---
+<div class="absolute inset-0 hidden lg:block overflow-hidden">
+  <canvas id="chiba-dotflow" class="absolute inset-0 h-full w-full block"></canvas>
+</div>
+
+<script>
+  const ok = window.matchMedia('(min-width: 1024px) and (pointer: fine)').matches;
+  if (ok) {
+    const canvas = document.getElementById('chiba-dotflow') as HTMLCanvasElement | null;
+    if (canvas) {
+      const io = new IntersectionObserver((entries, obs) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            obs.disconnect();
+            import('./DotMatrixFlow.client.ts').then((m) => m.boot(canvas)).catch((err) => {
+              console.warn('[chiba] dot-matrix scene failed:', err);
+            });
+            break;
+          }
+        }
+      }, { rootMargin: '200px' });
+      io.observe(canvas);
+    }
+  }
+</script>
+

@@ -4,12 +4,20 @@ import BentoCard from './BentoCard.astro';
 
 <section class="col-span-1 md:col-span-4">
   <BentoCard class="h-[200px] flex items-center justify-center bg-chiba-container relative overflow-hidden group">
-    <div class="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity">
-      <img src="/grayscale.jpg" alt="" class="w-full h-full object-cover" />
-    </div>
+    <div
+      class="absolute inset-0 opacity-90 group-hover:opacity-100 transition-opacity pointer-events-none"
+      style="background-image: url('/grayscale.jpg'); background-position: center; background-size: cover; background-repeat: no-repeat; mask-image: radial-gradient(circle at center, black 0 2.2px, transparent 2.8px); mask-size: 8px 8px; mask-repeat: repeat; -webkit-mask-image: radial-gradient(circle at center, black 0 2.2px, transparent 2.8px); -webkit-mask-size: 8px 8px; -webkit-mask-repeat: repeat;"
+    ></div>
+    <div class="absolute inset-0 border border-chiba-line/60 pointer-events-none"></div>
+    <div class="absolute left-4 top-4 font-mono text-[10px] tracking-[0.25em] text-chiba-gray/80 pointer-events-none">[ VISION / DOT-SCREEN ]</div>
+    <div class="absolute right-4 bottom-4 font-mono text-[10px] tracking-[0.25em] text-chiba-gray/80 pointer-events-none">MASK_DOTS_08</div>
+    <div class="absolute inset-x-0 top-0 h-px bg-chiba-line/70 pointer-events-none"></div>
+    <div class="absolute inset-x-0 bottom-0 h-px bg-chiba-line/70 pointer-events-none"></div>
+    <div class="absolute inset-y-0 left-0 w-px bg-chiba-line/70 pointer-events-none"></div>
+    <div class="absolute inset-y-0 right-0 w-px bg-chiba-line/70 pointer-events-none"></div>
     <div class="relative z-10 text-center">
-      <div class="bg-black/80 backdrop-blur-md border border-white/10 px-8 py-6 rounded-2xl group-hover:scale-105 transition-transform duration-500">
-        <p class="font-space text-2xl md:text-3xl font-bold tracking-[0.4em] uppercase text-chiba-text">Think FP Run in ASM</p>
+      <div class="bg-black/80 border border-chiba-line px-8 py-6 transition-colors duration-300">
+        <p class="font-space text-2xl md:text-3xl font-bold tracking-[0.28em] uppercase text-chiba-text">Think FP Run in ASM</p>
       </div>
     </div>
   </BentoCard>
