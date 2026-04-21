@@ -50,26 +50,30 @@ const resolvedOgImage = ogImage ?? (heroImage ? SITE_URL + heroImage : DEFAULT_O
       />
     )}
 
-    <div class="mb-10 border-x border-t border-chiba-line px-6 md:px-8 pt-6 bg-chiba-container">
-      <div class="text-[10px] font-mono font-bold uppercase tracking-[0.22em] text-chiba-gray mb-4 border-b border-chiba-line pb-4">
-        <FormattedDate date={pubDate} />
-        {updatedDate && (
-          <span class="ml-3 text-chiba-green/60">
-            Updated: <FormattedDate date={updatedDate} />
-          </span>
+    <div class="mb-10 border border-chiba-line bg-chiba-container">
+      <header class="px-6 md:px-8 pt-6 pb-8 border-b border-chiba-line">
+        <div class="text-[10px] font-mono font-bold uppercase tracking-[0.22em] text-chiba-gray mb-4 border-b border-chiba-line pb-4">
+          <FormattedDate date={pubDate} />
+          {updatedDate && (
+            <span class="ml-3 text-chiba-green/60">
+              Updated: <FormattedDate date={updatedDate} />
+            </span>
+          )}
+        </div>
+        <h1 class="font-space text-4xl md:text-6xl font-bold tracking-[-0.04em] uppercase text-chiba-text leading-[0.95] mb-4">
+          {title}
+        </h1>
+        {description && (
+          <p class="text-lg text-chiba-text-dim leading-relaxed max-w-3xl">{description}</p>
         )}
-      </div>
-      <h1 class="font-space text-4xl md:text-6xl font-bold tracking-[-0.04em] uppercase text-chiba-text leading-[0.95] mb-4">
-        {title}
-      </h1>
-      {description && (
-        <p class="text-lg text-chiba-text-dim leading-relaxed max-w-3xl">{description}</p>
-      )}
-    </div>
+      </header>
 
-    <article class="prose border border-chiba-line px-6 md:px-8 py-8 bg-chiba-container">
-      <slot />
-    </article>
+      <article class="px-6 md:px-8 py-8">
+        <div class="prose">
+          <slot />
+        </div>
+      </article>
+    </div>
 
     <div class="mt-12 pt-8 border-t border-chiba-line">
       <a
