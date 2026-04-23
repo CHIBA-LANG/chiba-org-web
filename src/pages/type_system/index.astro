@@ -1,0 +1,48 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { extractMarkdownDescription, extractMarkdownTitle } from '../../utils/content';
+
+const specs = (await getCollection('type_system')).map((entry) => ({
+  ...entry,
+  computedTitle: entry.data.title ?? extractMarkdownTitle(entry.body, entry.id),
+  computedDescription: entry.data.description ?? extractMarkdownDescription(entry.body),
+}));
+---
+
+<BaseLayout
+  title="Type System"
+  description="CHIBA type system notes covering level-1 rows, generics, continuations, shape dispatch, and implementation boundaries."
+>
+  <main class="max-w-[1600px] mx-auto px-6 md:px-10 pt-30 pb-24">
+    <div class="mb-16 border-x border-y border-chiba-line px-6 md:px-8 py-8 bg-chiba-container">
+      <div class="text-[10px] font-mono font-bold uppercase tracking-[0.24em] text-chiba-gray mb-4">CHIBA / TYPE SYSTEM / LOGIC SURFACE</div>
+      <h1 class="font-space text-5xl md:text-7xl font-bold tracking-[-0.05em] uppercase text-chiba-text mb-4">Type System</h1>
+      <div class="space-y-3 max-w-4xl text-lg leading-relaxed">
+        <p class="text-chiba-text-dim">这里集中放置 CHIBA level-1 类型系统文档，包括 rows、generics、continuations、send 与 method resolution 等设计边界。</p>
+        <p class="text-chiba-gray">This section centralizes CHIBA level-1 type system notes, including rows, generics, continuations, send, and method resolution boundaries.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 border-l border-t border-chiba-line">
+      {specs.map((spec) => (
+        <a href={`/type_system/${spec.id}`} class="block group">
+          <div class="bg-chiba-container border-r border-b border-chiba-line p-6 h-full hover:border-chiba-green/30 transition-colors">
+            <div class="text-[10px] font-mono font-bold uppercase tracking-[0.18em] text-chiba-gray mb-3 border-b border-chiba-line pb-3">
+              TYPE SYSTEM SPEC
+            </div>
+            <h2 class="text-xl font-space font-bold uppercase tracking-[-0.03em] text-chiba-text group-hover:text-chiba-green transition-colors mb-2 leading-tight">
+              {spec.computedTitle}
+            </h2>
+            <p class="text-xs text-chiba-text-dim leading-relaxed mb-3">{spec.computedDescription}</p>
+            <p class="text-xs text-chiba-gray leading-relaxed">Read the bilingual CHIBA specification stream for implementation-facing type rules.</p>
+            <div class="mt-4 pt-4 border-t border-chiba-line text-[10px] text-chiba-gray font-bold uppercase tracking-[0.18em] flex items-center gap-1 group-hover:gap-2 transition-all">
+              Read
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </main>
+</BaseLayout>

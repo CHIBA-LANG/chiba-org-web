@@ -1,0 +1,43 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  slug: string;
+}
+
+const SITE_URL = 'https://chiba-lang.org';
+const { title, description, slug } = Astro.props;
+const canonicalUrl = `${SITE_URL}/type_system/${slug}`;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  ogType="article"
+  canonicalUrl={canonicalUrl}
+>
+  <main class="max-w-5xl mx-auto px-6 md:px-10 pt-32 pb-24">
+    <div class="mb-10 border border-chiba-line bg-chiba-container">
+      <header class="px-6 md:px-8 pt-6 pb-8 border-b border-chiba-line">
+        <div class="text-[10px] font-mono font-bold uppercase tracking-[0.24em] text-chiba-gray mb-4">
+          CHIBA / TYPE SYSTEM / SPEC
+        </div>
+        <h1 class="font-space text-4xl md:text-6xl font-bold tracking-[-0.04em] uppercase text-chiba-text leading-[0.95] mb-4">
+          {title}
+        </h1>
+        <div class="max-w-3xl space-y-3 text-chiba-text-dim leading-relaxed">
+          <p>类型系统文档区用于集中整理 CHIBA level-1 的类型规则、边界定义与实现约束，保持设计与实现之间的可追踪关系。</p>
+          <p>Type system notes centralize CHIBA level-1 typing rules, boundary decisions, and implementation constraints so the design stays auditable end to end.</p>
+        </div>
+      </header>
+
+      <article class="px-6 md:px-8 py-8">
+        <div class="prose">
+          <slot />
+        </div>
+      </article>
+    </div>
+  </main>
+</BaseLayout>

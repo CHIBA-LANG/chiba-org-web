@@ -1,0 +1,22 @@
+---
+import { getCollection, render } from 'astro:content';
+import TypeSystemPost from '../../layouts/TypeSystemPost.astro';
+import { extractMarkdownDescription, extractMarkdownTitle } from '../../utils/content';
+
+export async function getStaticPaths() {
+  const specs = await getCollection('type_system');
+  return specs.map((spec) => ({
+    params: { slug: spec.id },
+    props: spec,
+  }));
+}
+
+const spec = Astro.props;
+const { Content } = await render(spec);
+const title = spec.data.title ?? extractMarkdownTitle(spec.body, spec.id);
+const description = spec.data.description ?? extractMarkdownDescription(spec.body);
+---
+
+<TypeSystemPost title={title} description={description} slug={spec.id}>
+  <Content />
+</TypeSystemPost>

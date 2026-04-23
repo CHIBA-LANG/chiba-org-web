@@ -1,0 +1,56 @@
+---
+import { getCollection } from 'astro:content';
+import BentoCard from './BentoCard.astro';
+import { extractMarkdownDescription, extractMarkdownTitle } from '../utils/content';
+
+const specs = (await getCollection('type_system')).slice(0, 4).map((entry) => ({
+  ...entry,
+  computedTitle: entry.data.title ?? extractMarkdownTitle(entry.body, entry.id),
+  computedDescription: entry.data.description ?? extractMarkdownDescription(entry.body),
+}));
+
+function truncate(str: string, max = 90) {
+  return str.length <= max ? str : str.slice(0, max).trimEnd() + '…';
+}
+---
+
+<section class="col-span-1 md:col-span-4 grid grid-cols-1 lg:grid-cols-3 gap-0 border-x border-chiba-line">
+  <div class="lg:col-span-1 py-8 px-6 border-y border-chiba-line bg-chiba-container">
+    <div class="font-mono text-[11px] tracking-[0.28em] text-chiba-gray mb-4">[ TYPE SYSTEM / NOTES ]</div>
+    <h2 class="text-3xl font-space font-bold tracking-[-0.03em] uppercase mb-3">Type System</h2>
+    <div class="space-y-3 mb-6 text-sm leading-relaxed">
+      <p class="text-chiba-text-dim">集中记录 CHIBA level-1 类型系统的边界、row 规则、continuation 约束与 generics 策略。</p>
+      <p class="text-chiba-gray">A living specification for CHIBA level-1 typing rules, row semantics, continuations, and structural generics.</p>
+    </div>
+    <a
+      href="/type_system"
+      class="inline-flex items-center gap-2 text-xs font-bold text-chiba-green uppercase tracking-[0.2em] hover:text-chiba-text transition-colors border-b border-chiba-green/30 pb-1"
+    >
+      Browse Specs
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </a>
+  </div>
+
+  <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-0">
+    {specs.map((spec) => (
+      <a href={`/type_system/${spec.id}`} class="block h-full">
+        <BentoCard class="bg-chiba-container-low group cursor-pointer hover:border-chiba-green/30 transition-colors h-full !p-0 overflow-hidden flex flex-col border-y border-chiba-line md:border-l first:md:border-l-0">
+          <div class="flex flex-col flex-1 p-4">
+            <div class="text-[10px] font-mono uppercase tracking-[0.18em] text-chiba-gray mb-3 border-b border-chiba-line pb-3">
+              TYPE SYSTEM SPEC
+            </div>
+            <h3 class="text-base font-space font-bold mb-2 group-hover:text-chiba-green transition-colors leading-tight uppercase tracking-[-0.02em]">
+              {spec.computedTitle}
+            </h3>
+            <p class="text-xs text-chiba-text-dim leading-relaxed mb-2">{truncate(spec.computedDescription)}</p>
+            <p class="text-xs text-chiba-gray leading-relaxed mb-4">Read the CHIBA type system note and follow the current implementation boundary.</p>
+            <div class="text-[10px] text-chiba-gray font-bold uppercase tracking-[0.18em] flex items-center gap-1 group-hover:gap-2 transition-all mt-auto pt-4 border-t border-chiba-line">
+              Open Spec
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+          </div>
+        </BentoCard>
+      </a>
+    ))}
+  </div>
+</section>

@@ -20,6 +20,8 @@ const pillars = [
     desc: 'Answer Type Polymorphism tracks continuation boundaries.',
     detail: 'Safety without GC, without refcount.',
     sigil: '└─┘',
+    href: '/type_system',
+    cta: 'TYPE SYSTEM',
   },
 ];
 ---
@@ -44,6 +46,16 @@ const pillars = [
         <span class="text-chiba-green">▍</span>
         <span class="italic">{p.detail}</span>
       </div>
+
+      {p.href && p.cta && (
+        <a
+          href={p.href}
+          class="mt-6 inline-flex items-center gap-2 border border-chiba-line px-4 py-3 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-chiba-green hover:text-chiba-text hover:border-chiba-green/40 hover:bg-chiba-container transition-colors"
+        >
+          <span>{p.cta}</span>
+          <span>-></span>
+        </a>
+      )}
     </article>
   ))}
 </section>

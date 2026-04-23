@@ -19,4 +19,14 @@ const blog = defineCollection({
 	}),
 });
 
-export const collections = { blog };
+const typeSystem = defineCollection({
+	loader: glob({ base: './src/content/type_system', pattern: '**/*.{md,mdx}' }),
+	schema: z.object({
+		title: z.string().optional(),
+		description: z.string().optional(),
+		pubDate: z.coerce.date().optional(),
+		updatedDate: z.coerce.date().optional(),
+	}),
+});
+
+export const collections = { blog, type_system: typeSystem };
