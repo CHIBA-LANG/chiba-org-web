@@ -27,6 +27,19 @@ const navItems = [
   </nav>
 
   <div class="flex items-center gap-2">
+    <button
+      id="mobile-nav-toggle"
+      aria-label="Toggle navigation"
+      aria-expanded="false"
+      aria-controls="mobile-nav-panel"
+      class="md:hidden w-8 h-8 border border-chiba-line bg-chiba-container flex items-center justify-center text-chiba-gray hover:text-chiba-green hover:border-chiba-green/40 transition-all"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="4" y1="7" x2="20" y2="7" />
+        <line x1="4" y1="12" x2="20" y2="12" />
+        <line x1="4" y1="17" x2="20" y2="17" />
+      </svg>
+    </button>
     <!-- RSS link -->
     <a
       href="/rss.xml"
@@ -63,6 +76,19 @@ const navItems = [
   </div>
 </header>
 
+<div id="mobile-nav-panel" class="md:hidden fixed top-[73px] inset-x-0 z-40 hidden border-b border-chiba-line bg-chiba-bg/95 backdrop-blur-sm">
+  <nav class="px-6 py-4 flex flex-col gap-3">
+    {navItems.map((item) => (
+      <a
+        href={item.href}
+        class="text-chiba-text-dim font-mono tracking-[0.1em] uppercase text-[11px] hover:text-chiba-green transition-colors py-2 border-b border-chiba-line/60 last:border-b-0"
+      >
+        {item.label}
+      </a>
+    ))}
+  </nav>
+</div>
+
 <script>
   function initThemeToggle() {
     const btn = document.getElementById('theme-toggle');
@@ -92,7 +118,30 @@ const navItems = [
     });
   }
 
+  function initMobileNav() {
+    const btn = document.getElementById('mobile-nav-toggle');
+    const panel = document.getElementById('mobile-nav-panel');
+    if (!btn || !panel) return;
+
+    function closePanel() {
+      panel.classList.add('hidden');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+
+    btn.onclick = () => {
+      const isHidden = panel.classList.contains('hidden');
+      panel.classList.toggle('hidden', !isHidden);
+      btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+    };
+
+    panel.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', closePanel);
+    });
+  }
+
   // Run on initial load and after view transitions
   initThemeToggle();
+  initMobileNav();
   document.addEventListener('astro:after-swap', initThemeToggle);
+  document.addEventListener('astro:after-swap', initMobileNav);
 </script>

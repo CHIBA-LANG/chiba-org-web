@@ -58,7 +58,21 @@ function formatSectionName(section: string) {
     </section>
 
     <section class="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-6 items-start">
-      <aside class="border border-chiba-line bg-chiba-container sticky top-28">
+      <details class="xl:hidden border border-chiba-line bg-chiba-container overflow-hidden">
+        <summary class="px-5 py-4 cursor-pointer border-b border-chiba-line text-[10px] font-mono font-bold uppercase tracking-[0.22em] text-chiba-gray">
+          Section Map
+        </summary>
+        <nav class="p-3 space-y-1 max-h-80 overflow-y-auto">
+          {groupedDocs.map(({ section, entries }) => (
+            <a href={`#${section}`} class="block px-3 py-3 border border-transparent hover:border-chiba-green/30 hover:bg-chiba-container-low transition-colors">
+              <div class="text-[11px] font-mono uppercase tracking-[0.18em] text-chiba-green">{formatSectionName(section)}</div>
+              <div class="text-xs text-chiba-gray mt-1">{entries.length} pages</div>
+            </a>
+          ))}
+        </nav>
+      </details>
+
+      <aside class="hidden xl:block border border-chiba-line bg-chiba-container sticky top-28">
         <div class="px-5 py-4 border-b border-chiba-line text-[10px] font-mono font-bold uppercase tracking-[0.22em] text-chiba-gray">Section Map</div>
         <nav class="p-3 space-y-1">
           {groupedDocs.map(({ section, entries }) => (
