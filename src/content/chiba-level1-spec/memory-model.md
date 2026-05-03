@@ -177,7 +177,6 @@ generic 本体可以先收集 obligation，但实例化后的 concrete type / co
 
 - 完整 borrow checking
 - 复杂 region polymorphism
-- answer type polymorphism
 - 依赖 interface 的内存能力系统
 - 把普通数据类型全面变成显式 unique API
 

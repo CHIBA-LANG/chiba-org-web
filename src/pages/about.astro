@@ -2,9 +2,64 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="About" description="About the CHIBA project and Software Foundation.">
-  <main class="max-w-3xl mx-auto px-6 pt-36 pb-24 prose">
-    <h1>About CHIBA</h1>
-    <p>CHIBA is a metal-level functional language targeting zero-runtime, formally verified systems software.</p>
+<BaseLayout
+  title="About CHIBA (尺八) LANGUAGE"
+  description="CHIBA (尺八) is a small systems programming language built from dissatisfaction with modern FP, Zig instability, and Rust complexity."
+  canonicalUrl="https://chiba-lang.org/about/"
+>
+  <main class="max-w-4xl mx-auto px-6 md:px-10 pt-36 pb-24">
+    <section class="border border-chiba-line bg-chiba-container px-6 md:px-8 py-8 mb-8">
+      <div class="text-[10px] font-mono font-bold uppercase tracking-[0.24em] text-chiba-gray mb-4">CHIBA / ABOUT</div>
+      <h1 class="font-space text-5xl md:text-7xl font-bold tracking-[-0.05em] uppercase text-chiba-text mb-5">About CHIBA (尺八) LANGUAGE</h1>
+      <p class="text-lg text-chiba-text-dim leading-relaxed max-w-3xl">
+        CHIBA (尺八) is a metal-level functional programming language: small primitives, explicit memory, direct machine control, and no heavy runtime standing between the code and the system.
+      </p>
+    </section>
+
+    <section class="prose max-w-none bg-chiba-container px-6 md:px-8 py-8">
+      <h2>Why Another Language?</h2>
+      <p>
+        Because I am tired of where modern language communities keep drifting.
+      </p>
+      <p>
+        A lot of functional programming has become beautiful front-end theory glued onto someone else's runtime: LLVM, JVM, BEAM, JavaScript engines. The ideas are still powerful, but the engineering path is too often fragile, academic, and distant from the machine.
+      </p>
+      <p>
+        Zig is still one of my favorite languages, and Andrew Kelley remains one of the developers I respect most. But the ecosystem keeps testing everyone's patience: async added then removed, the IO library rewritten again and again, modules redesigned, and even `anytype` becoming `AnyVal`. Every change may have a reason; the accumulated instability still hurts.
+      </p>
+      <p>
+        Rust solved real problems, but it keeps growing heavier. The language gets more complex, the standard library moves slowly, and the gap between elegant theory and day-to-day systems work keeps widening.
+      </p>
+
+      <h2>The Motivation</h2>
+      <p>
+        CHIBA exists to ask a simple question: can functional programming be as transparent as C, as practical as Zig, and less burdened than Rust?
+      </p>
+      <p>
+        I want algebraic data types, pattern matching, continuations, and strong static reasoning without accepting a huge runtime, hidden allocation, or outsourced control over ABI and stack layout.
+      </p>
+
+      <h2>Zen</h2>
+      <ul>
+        <li>Small primitives, deep composition.</li>
+        <li>No hidden control flow.</li>
+        <li>Minimal system dependencies.</li>
+        <li>Memory choices should not break the programmer's thought.</li>
+        <li>The compiler should know the machine.</li>
+        <li>Run first, prove later, then make it fast.</li>
+      </ul>
+
+      <h2>What Breaks The Zen</h2>
+      <ul>
+        <li>Implicit control paths like broad `try/catch/finally` machinery or interruptible async that can resume anywhere.</li>
+        <li>System dependencies that silently pull in glibc, libssl, zlib, or other heavy default assumptions.</li>
+        <li>Memory rituals that derail thought: `Box::new`, `Rc::new`, `Arc::new`, `Cow::new`, and friends everywhere.</li>
+        <li>Compilers pretending every target is the lowest common denominator instead of understanding the real machine.</li>
+      </ul>
+
+      <p>
+        The name comes from chi-ba (尺八 chinese reading), the shakuhachi: one bamboo tube, five holes, no mechanism to hide behind but with an extremely wide vocal range and complex playing techniques. That is the taste I want in a language too.
+      </p>
+    </section>
   </main>
 </BaseLayout>

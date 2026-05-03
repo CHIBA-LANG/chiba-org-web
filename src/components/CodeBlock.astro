@@ -1,52 +1,156 @@
 ---
+import { Code } from 'astro:components';
+import type { ThemePresets } from '@astrojs/markdown-remark/shiki';
 import BentoCard from './BentoCard.astro';
 import Label from './Label.astro';
+import { chibaLanguage } from '../shiki/chiba-language.mjs';
 
-const chibaHL = [
-  `<span class="tok-comment">// Store a 64-bit word at ptr[idx] (idx in 8-byte units). Returns 0.</span>`,
-  `<span class="tok-keyword">def</span> <span class="tok-fn">store64</span><span class="tok-punct">(</span><span class="tok-param">ptr</span><span class="tok-punct">:</span> <span class="tok-type">i64</span><span class="tok-punct">,</span> <span class="tok-param">idx</span><span class="tok-punct">:</span> <span class="tok-type">i64</span><span class="tok-punct">,</span> <span class="tok-param">val</span><span class="tok-punct">:</span> <span class="tok-type">i64</span><span class="tok-punct">):</span> <span class="tok-punct">*</span><span class="tok-type">u8</span> <span class="tok-punct">=</span>`,
-  `    <span class="tok-keyword">asm</span> <span class="tok-punct">(</span><span class="tok-param">ptr</span><span class="tok-punct">:</span> <span class="tok-reg">rdi</span><span class="tok-punct">,</span> <span class="tok-param">idx</span><span class="tok-punct">:</span> <span class="tok-reg">rsi</span><span class="tok-punct">,</span> <span class="tok-param">val</span><span class="tok-punct">:</span> <span class="tok-reg">rdx</span><span class="tok-punct">)</span> <span class="tok-punct">:</span> <span class="tok-punct">(</span><span class="tok-reg">rax</span><span class="tok-punct">)</span> <span class="tok-punct">=&gt;</span> <span class="tok-punct">{</span>`,
-  `        <span class="tok-string">"mov [rdi + rsi*8], rdx"</span>`,
-  `        <span class="tok-string">"xor eax, eax"</span>`,
-  `    <span class="tok-punct">}</span>`,
-].join('\n');
+const chibaCodeLanguage = {
+  ...chibaLanguage.grammar,
+  name: chibaLanguage.id,
+  aliases: chibaLanguage.aliases,
+};
 
-const asmHL = [
-  `<span class="tok-placeholder">&lt;prefix&gt;</span><span class="tok-punct">_</span><span class="tok-fn">store64</span><span class="tok-punct">:</span>`,
-  `    <span class="tok-placeholder">&lt;abi calling convention&gt;</span>`,
-  `    <span class="tok-instr">mov</span> <span class="tok-punct">[</span><span class="tok-reg">rdi</span> <span class="tok-punct">+</span> <span class="tok-reg">rsi</span><span class="tok-punct">*</span><span class="tok-num">8</span><span class="tok-punct">],</span> <span class="tok-reg">rdx</span>`,
-  `    <span class="tok-instr">xor</span> <span class="tok-reg">eax</span><span class="tok-punct">,</span> <span class="tok-reg">eax</span>`,
-  `    <span class="tok-placeholder">&lt;abi return sequence&gt;</span>`,
-  `    <span class="tok-instr">jmp</span> <span class="tok-placeholder">&lt;the continuation address&gt;</span>`,
-].join('\n');
+const codeThemes: Record<'light' | 'dark', ThemePresets> = {
+  light: 'github-light',
+  dark: 'github-dark',
+};
+
+const examples = [
+  {
+    title: 'Delimited Continuation',
+    file: 'answer.chiba',
+    note: 'Control is a value, not a hidden runtime bargain.',
+    code: `def choose(): i64 =
+    reset {
+      let x = shift k {
+        k(20) + k(22)
+      }
+      x + 1
+    }`,
+  },
+  {
+    title: 'Inline ASM',
+    file: 'store64.chiba',
+    note: 'Registers and return paths stay visible at the source level.',
+    code: `def store64(ptr: i64, idx: i64, val: i64): *u8 =
+    unsafe {
+      asm (ptr: rdi, idx: rsi, val: rdx) : (rax) => {
+          "mov [rdi + rsi*8], rdx"
+          "xor eax, eax"
+      }
+    }`,
+  },
+  {
+    title: 'Method',
+    file: 'slice.chiba',
+    note: 'Methods are resolved statically, without object tax.',
+    code: `type Slice = { ptr: *u8, len: usize }
+
+def Slice.at(self: Slice, index: usize): u8 =
+    unsafe { self.ptr[index] }
+
+def main(): u8 = {
+    let s = Slice { ptr: 0x1000, len: 10 }
+    s.at(3)
+}
+`,
+  },
+  {
+    title: 'Row Poly',
+    file: 'shape.chiba',
+    note: 'Functions can ask for a shape without naming the whole record.',
+    code: `def x_of(point: {r | x: i64}): i64 =
+    point.x
+
+def move_right(point: {r | x: i64}, dx: i64): {r | x: i64} =
+    {point | x: point.x + dx}`,
+  },
+  {
+    title: 'Pattern Matching',
+    file: 'option.chiba',
+    note: 'Data constructors destructure directly inside expression arms.',
+    code: `data Option[T] { Some(T), None }
+
+def unwrap_or(value: Option[T], fallback: T): T =
+    match value {
+      Some(x) => x
+      None => fallback
+    }`,
+  },
+  {
+    title: 'Pipe',
+    file: 'pipeline.chiba',
+    note: 'Dataflow reads forward while calls stay ordinary.',
+    code: `def normalize(name: String): String =
+    name |>
+      trim() |>
+      lowercase() |>
+      replace("_", "-") |>
+      intern()`,
+  },
+];
 ---
 
-<section class="col-span-1 md:col-span-4 grid grid-cols-1 lg:grid-cols-3 gap-0 border-x border-chiba-line">
-  <BentoCard class="lg:col-span-2 bg-black border-y lg:border-r border-chiba-line">
-    <div class="flex justify-between items-center mb-6 border-b border-chiba-line pb-4">
-      <Label>store64.chiba</Label>
-      <div class="flex gap-2">
+<section class="home-code-examples col-span-1 md:col-span-4 border-x border-chiba-line">
+  <BentoCard class="bg-black border-y border-chiba-line">
+    <div class="flex flex-wrap justify-between items-center gap-4 mb-6 border-b border-chiba-line pb-4">
+      <Label>Chiba Examples</Label>
+      <div class="flex gap-2" aria-hidden="true">
         <div class="w-2 h-2 bg-red-500/50"></div>
         <div class="w-2 h-2 bg-yellow-500/50"></div>
         <div class="w-2 h-2 bg-chiba-green/50"></div>
       </div>
     </div>
-    <pre class="font-mono text-[13px] leading-relaxed overflow-x-auto whitespace-pre"><code set:html={chibaHL} /></pre>
-  </BentoCard>
-  <BentoCard class="bg-chiba-container-low border-y border-chiba-line">
-    <div class="border-b border-chiba-line pb-4 mb-6">
-      <Label>Emitted ASM</Label>
-    </div>
-    <pre class="font-mono text-[11px] overflow-x-auto whitespace-pre"><code set:html={asmHL} /></pre>
-    <div class="mt-8 flex flex-col gap-2">
-      <div class="bg-chiba-green/5 px-3 py-2 border border-chiba-green/20 text-[10px] text-chiba-green font-bold uppercase tracking-widest flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        Zero Runtime symbols
-      </div>
-      <div class="bg-white/5 px-3 py-2 border border-chiba-line text-[10px] text-chiba-gray font-bold uppercase tracking-widest flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        Static mapping
-      </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+      {examples.map((example) => (
+        <article class="border border-chiba-line bg-chiba-container-low/70 min-w-0">
+          <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-chiba-line px-4 py-3">
+            <h3 class="font-mono text-xs font-bold uppercase tracking-[0.16em] text-chiba-text">{example.title}</h3>
+            <span class="font-mono text-[10px] text-chiba-gray">{example.file}</span>
+          </div>
+          <Code
+            code={example.code}
+            lang={chibaCodeLanguage}
+            themes={codeThemes}
+            defaultColor={false}
+            class="home-shiki-code"
+          />
+          <p class="border-t border-chiba-line px-4 py-3 text-xs leading-relaxed text-chiba-text-dim">{example.note}</p>
+        </article>
+      ))}
     </div>
   </BentoCard>
 </section>
+
+<style is:global>
+  .home-code-examples .astro-code {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
+    border: 0;
+    color: var(--shiki-dark);
+    background: #07070a !important;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.65;
+  }
+
+  .home-code-examples .astro-code span {
+    color: var(--shiki-dark);
+  }
+
+  .home-code-examples .astro-code code {
+    display: block;
+    min-width: max-content;
+  }
+
+  [data-theme="light"] .home-code-examples .astro-code {
+    color: var(--shiki-light);
+    background: #f7f7f8 !important;
+  }
+
+  [data-theme="light"] .home-code-examples .astro-code span {
+    color: var(--shiki-light);
+  }
+</style>

@@ -25,15 +25,18 @@ const {
 } = Astro.props;
 
 const fullTitle = title === SITE_TITLE ? title : `${title} — ${SITE_TITLE}`;
+const resolvedCanonicalUrl = new URL(canonicalUrl, SITE_URL).href;
+const isHomePage = new URL(resolvedCanonicalUrl).pathname === '/';
 
 const softwareAppSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: SITE_TITLE,
+  name: 'CHIBA',
   applicationCategory: 'DeveloperApplication',
   operatingSystem: 'Linux, macOS, Windows',
   description: SITE_DESCRIPTION,
   url: SITE_URL,
+  image: DEFAULT_OG_IMAGE,
   softwareVersion: '0.6.13',
   offers: {
     '@type': 'Offer',
@@ -46,6 +49,20 @@ const softwareAppSchema = {
     url: SITE_URL,
   },
   license: 'https://opensource.org/licenses/Apache-2.0',
+};
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'CHIBA',
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
+  publisher: {
+    '@type': 'Organization',
+    name: 'CHIBA Software Foundation',
+    url: SITE_URL,
+    logo: `${SITE_URL}/CHIBA.png`,
+    sameAs: ['https://github.com/chiba-lang', 'https://x.com/lemonhxmoe'],
+  },
 };
 ---
 
@@ -62,12 +79,13 @@ const softwareAppSchema = {
     <meta name="keywords" content={keywords} />
     <meta name="author" content="LemonHX" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href={canonicalUrl} />
+    <link rel="canonical" href={resolvedCanonicalUrl} />
     <link rel="alternate" type="application/rss+xml" title={`${SITE_TITLE} Blog`} href={`${SITE_URL}/rss.xml`} />
+    <link rel="llms" href="/llms.txt" />
 
     <!-- Open Graph -->
     <meta property="og:type" content={ogType} />
-    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:url" content={resolvedCanonicalUrl} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={ogImage} />
@@ -84,8 +102,8 @@ const softwareAppSchema = {
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-    <!-- Google SoftwareApplication JSON-LD -->
-    <script type="application/ld+json" set:html={JSON.stringify(softwareAppSchema)} />
+    {isHomePage && <script type="application/ld+json" set:html={JSON.stringify(softwareAppSchema)} />}
+    {isHomePage && <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />}
 
     <!-- Theme init: run before paint to avoid flash -->
     <script is:inline>
@@ -97,7 +115,10 @@ const softwareAppSchema = {
     </script>
   </head>
   <body class="grain min-h-screen bg-chiba-bg text-chiba-text selection:bg-chiba-green selection:text-chiba-bg">
+    <a href="#main-content" class="skip-link">Skip to content</a>
     <Navbar />
-    <slot />
+    <div id="main-content">
+      <slot />
+    </div>
   </body>
 </html>

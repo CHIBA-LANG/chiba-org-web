@@ -20,6 +20,10 @@ const blogSchema = {
     description: post.data.description,
     url: `${SITE_URL}/blog/${post.id}/`,
     datePublished: post.data.pubDate.toISOString(),
+    dateModified: (post.data.updatedDate ?? post.data.pubDate).toISOString(),
+    image: post.data.ogImage ?? (post.data.heroImage ? `${SITE_URL}${post.data.heroImage}` : `${SITE_URL}/CHIBA.png`),
+    author: { '@type': 'Organization', name: 'CHIBA Software Foundation', url: SITE_URL },
+    publisher: { '@type': 'Organization', name: 'CHIBA Software Foundation', url: SITE_URL },
   })),
 };
 const breadcrumbSchema = {

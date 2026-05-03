@@ -6,12 +6,10 @@
 //   surface, given outward velocity from the new anchor, and fade out as
 //   short-lived particles.
 
-const STREAM = ['CHIBA', 'PARSE', 'TYPER', 'SSA', 'ASM', 'ATP', '尺八', 'EMIT', 'LINK', 'BOOT',
-    '编译', '验证', '定理', '证明', '无GC', '无libc', '零运行时', 'Metal', 'Functional', 'Zero', 'Runtime', '安全', '可靠', '高性能', '优雅',
-    // japanese
-    'コンパイラ', '検証', '定理', '証明', 'GCなし', 'libcなし', 'ゼロランタイム', 'メタル', '関数型', '安全', '信頼性', '高性能', 'エレガント',
-    // russian
-    'компилятор', 'верификация', 'теорема', 'доказательство', 'безGC', 'безlibc', 'нулеваясредаисполнения', 'металл', 'функциональный', 'безопасный', 'надежный', 'высокаяпроизводительность', 'элегантный',
+const STREAM = ['CHIBA', 'PARSE', 'TYPER', 'libcなし', 'ゼロランタイム', 'メタル', '関数型', 'SSA', 'ASM', 'ATP', '尺八', 'EMIT', 'LINK', 'BOOT', 
+    '编译', '验证', '无GC', '无libc', '零运行时', 'компилятор', 'верификация', 'теорема', 'доказательство', 'безGC', 'Metal', 'Functional', 'Zero', 'Runtime', '安全', '可靠', '高性能', '优雅',
+    'コンパイラ', '検証', 'GCなし',  '安全', '信頼性', '高性能', 'エレガント',
+    'безlibc', 'нулеваясредаисполнения', 'металл', 'функциональный', 'безопасный', 'надежный', 'высокаяпроизводительность', 'элегантный',
 ];
 const STAGE_DURATION = 500; // ms total per word
 const ENTRY_DURATION = 220;  // ms violent entry portion

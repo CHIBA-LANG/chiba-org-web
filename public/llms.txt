@@ -1,0 +1,22 @@
+# CHIBA
+
+CHIBA is a programming language project focused on metal-level functional programming, deterministic compilation, type systems, continuations, memory models, and compiler tooling.
+
+## Primary Pages
+
+- Home: https://chiba-lang.org/
+- Docs: https://chiba-lang.org/docs/
+- Blog: https://chiba-lang.org/blog/
+- Type System: https://chiba-lang.org/type_system/
+- About: https://chiba-lang.org/about/
+
+## Core Documentation
+
+- ChibaLex: https://chiba-lang.org/docs/chibalex/
+- ChibaCC: https://chiba-lang.org/docs/chibacc/
+- Memory Model: https://chiba-lang.org/docs/memory-model/
+- Package System: https://chiba-lang.org/docs/package-system/
+
+## Source
+
+- GitHub organization: https://github.com/chiba-lang
