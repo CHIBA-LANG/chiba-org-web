@@ -27,12 +27,47 @@ function formatSectionName(section: string) {
   if (section === 'root') return 'Overview';
   return section.replace(/[-_]+/g, ' ');
 }
+
+const SITE_URL = 'https://chiba-lang.org';
+const priorityDocs = ['README', 'chibalex', 'chibacc', 'memory-model', 'package-system'].flatMap((id) => {
+  const doc = docs.find((entry) => entry.id === id);
+  return doc ? [doc] : [];
+});
+const collectionSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  '@id': `${SITE_URL}/docs/#collectionpage`,
+  name: 'CHIBA Docs',
+  description: 'CHIBA level-1 specification including language syntax, ChibaLex, ChibaCC, memory model, package system, and lowering notes.',
+  url: `${SITE_URL}/docs/`,
+  mainEntity: {
+    '@type': 'ItemList',
+    itemListElement: docs.slice(0, 30).map((doc, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: doc.computedTitle,
+      url: `${SITE_URL}/docs/${doc.id}/`,
+    })),
+  },
+};
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+    { '@type': 'ListItem', position: 2, name: 'Docs', item: `${SITE_URL}/docs/` },
+  ],
+};
 ---
 
 <BaseLayout
   title="Docs"
   description="CHIBA level-1 specification inside the site, including core language, control flow, memory model, package system, and lowering notes."
+  canonicalUrl={`${SITE_URL}/docs/`}
 >
+  <script type="application/ld+json" set:html={JSON.stringify(collectionSchema)} />
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+
   <main class="max-w-[1600px] mx-auto px-6 md:px-10 pt-30 pb-24">
     <section class="mb-12 border border-chiba-line bg-chiba-container overflow-hidden">
       <div class="px-6 md:px-8 py-8 md:py-10 bg-[linear-gradient(135deg,rgba(0,230,118,0.10),transparent_55%),linear-gradient(180deg,var(--color-chiba-container-high),var(--color-chiba-container))]">
@@ -43,6 +78,16 @@ function formatSectionName(section: string) {
             <p class="text-chiba-text-dim">这里接入了站内版 CHIBA level-1 spec，包含 core language、control flow、memory model、package system、IR lowering 与配套设计说明。</p>
             <p class="text-chiba-gray">This page turns the level-1 spec into a navigable documentation surface, grouped by subsystem so readers can jump directly into the language boundary they need.</p>
           </div>
+          <nav class="border border-chiba-line bg-chiba-container/80 p-4" aria-label="Core docs">
+            <div class="text-[10px] font-mono font-bold uppercase tracking-[0.22em] text-chiba-gray mb-3">Core Entrypoints</div>
+            <div class="grid grid-cols-1 gap-2">
+              {priorityDocs.map((doc) => (
+                <a href={`/docs/${doc.id}/`} class="px-3 py-2 border border-chiba-line text-xs uppercase tracking-[0.12em] text-chiba-text-dim hover:text-chiba-green hover:border-chiba-green/30 transition-colors">
+                  {doc.computedTitle}
+                </a>
+              ))}
+            </div>
+          </nav>
           <div class="grid grid-cols-2 gap-px border border-chiba-line bg-chiba-line text-xs font-mono uppercase tracking-[0.18em]">
             <div class="bg-chiba-container p-4">
               <div class="text-chiba-gray mb-2">Sections</div>
@@ -99,7 +144,7 @@ function formatSectionName(section: string) {
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-px bg-chiba-line">
               {entries.map((doc) => (
-                <a href={`/docs/${doc.id}`} class="group block bg-chiba-container p-5 hover:bg-chiba-container-low transition-colors min-h-44">
+                <a href={`/docs/${doc.id}/`} class="group block bg-chiba-container p-5 hover:bg-chiba-container-low transition-colors min-h-44">
                   <div class="text-[10px] font-mono uppercase tracking-[0.18em] text-chiba-gray mb-3 border-b border-chiba-line pb-3">
                     {doc.id}
                   </div>

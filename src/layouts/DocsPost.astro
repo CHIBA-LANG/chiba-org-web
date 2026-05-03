@@ -6,11 +6,43 @@ interface Props {
   title: string;
   description: string;
   slug: string;
+  previousDoc?: {
+    title: string;
+    href: string;
+  };
+  nextDoc?: {
+    title: string;
+    href: string;
+  };
 }
 
 const SITE_URL = 'https://chiba-lang.org';
-const { title, description, slug } = Astro.props;
-const canonicalUrl = `${SITE_URL}/docs/${slug}`;
+const { title, description, slug, previousDoc, nextDoc } = Astro.props;
+const canonicalUrl = `${SITE_URL}/docs/${slug}/`;
+const [section = 'root'] = slug.split('/');
+const sectionName = section === 'root' ? 'Overview' : section.replace(/[-_]+/g, ' ');
+const docsSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'TechArticle',
+  '@id': `${canonicalUrl}#techarticle`,
+  headline: title,
+  description,
+  url: canonicalUrl,
+  mainEntityOfPage: canonicalUrl,
+  about: ['CHIBA programming language', 'language specification', sectionName],
+  author: { '@type': 'Organization', name: 'CHIBA Software Foundation', url: SITE_URL },
+  publisher: { '@type': 'Organization', name: 'CHIBA Software Foundation', url: SITE_URL },
+};
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+    { '@type': 'ListItem', position: 2, name: 'Docs', item: `${SITE_URL}/docs/` },
+    { '@type': 'ListItem', position: 3, name: sectionName, item: `${SITE_URL}/docs/#${section}` },
+    { '@type': 'ListItem', position: 4, name: title, item: canonicalUrl },
+  ],
+};
 ---
 
 <BaseLayout
@@ -19,6 +51,9 @@ const canonicalUrl = `${SITE_URL}/docs/${slug}`;
   ogType="article"
   canonicalUrl={canonicalUrl}
 >
+  <script type="application/ld+json" set:html={JSON.stringify(docsSchema)} />
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+
   <main class="max-w-[1500px] mx-auto px-6 md:px-10 pt-32 pb-24">
     <div class="flex gap-8 items-start justify-center">
       <ArticleToc />
@@ -44,6 +79,33 @@ const canonicalUrl = `${SITE_URL}/docs/${slug}`;
             </div>
           </article>
         </div>
+
+        <nav class="grid grid-cols-1 md:grid-cols-3 gap-3" aria-label="Docs navigation">
+          <a
+            href="/docs/"
+            class="border border-chiba-line bg-chiba-container px-4 py-4 text-xs font-bold uppercase tracking-[0.18em] text-chiba-green hover:text-chiba-text hover:border-chiba-green/30 transition-colors"
+          >
+            Docs Index
+          </a>
+          {previousDoc && (
+            <a
+              href={previousDoc.href}
+              class="border border-chiba-line bg-chiba-container px-4 py-4 text-xs uppercase tracking-[0.12em] text-chiba-text-dim hover:text-chiba-green hover:border-chiba-green/30 transition-colors"
+            >
+              <span class="block text-[10px] font-bold text-chiba-gray mb-2 tracking-[0.18em]">Previous Spec</span>
+              {previousDoc.title}
+            </a>
+          )}
+          {nextDoc && (
+            <a
+              href={nextDoc.href}
+              class="border border-chiba-line bg-chiba-container px-4 py-4 text-xs uppercase tracking-[0.12em] text-chiba-text-dim hover:text-chiba-green hover:border-chiba-green/30 transition-colors md:text-right"
+            >
+              <span class="block text-[10px] font-bold text-chiba-gray mb-2 tracking-[0.18em]">Next Spec</span>
+              {nextDoc.title}
+            </a>
+          )}
+        </nav>
       </div>
     </div>
   </main>

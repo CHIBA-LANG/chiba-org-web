@@ -4,19 +4,31 @@ import TypeSystemPost from '../../layouts/TypeSystemPost.astro';
 import { extractMarkdownDescription, extractMarkdownTitle } from '../../utils/content';
 
 export async function getStaticPaths() {
-  const specs = await getCollection('type_system');
-  return specs.map((spec) => ({
+  const specs = (await getCollection('type_system')).sort((left, right) =>
+    left.id.localeCompare(right.id, undefined, { numeric: true })
+  );
+  const linkedSpecs = specs.map((spec) => ({
+    spec,
+    title: spec.data.title ?? extractMarkdownTitle(String(spec.body ?? ''), spec.id),
+    href: `/type_system/${spec.id}/`,
+  }));
+
+  return linkedSpecs.map(({ spec }, index) => ({
     params: { slug: spec.id },
-    props: spec,
+    props: {
+      spec,
+      previousSpec: linkedSpecs[index - 1] ? { title: linkedSpecs[index - 1].title, href: linkedSpecs[index - 1].href } : undefined,
+      nextSpec: linkedSpecs[index + 1] ? { title: linkedSpecs[index + 1].title, href: linkedSpecs[index + 1].href } : undefined,
+    },
   }));
 }
 
-const spec = Astro.props;
+const { spec, previousSpec, nextSpec } = Astro.props;
 const { Content } = await render(spec);
-const title = spec.data.title ?? extractMarkdownTitle(spec.body, spec.id);
-const description = spec.data.description ?? extractMarkdownDescription(spec.body);
+const title = spec.data.title ?? extractMarkdownTitle(String(spec.body ?? ''), spec.id);
+const description = spec.data.description ?? extractMarkdownDescription(String(spec.body ?? ''));
 ---
 
-<TypeSystemPost title={title} description={description} slug={spec.id}>
+<TypeSystemPost title={title} description={description} slug={spec.id} previousSpec={previousSpec} nextSpec={nextSpec}>
   <Content />
 </TypeSystemPost>

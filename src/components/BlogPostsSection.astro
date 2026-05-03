@@ -19,7 +19,7 @@ function truncate(str: string, max = 80) {
     <h2 class="text-3xl font-space font-bold tracking-[-0.03em] uppercase mb-3">Latest Insights</h2>
     <p class="text-sm text-chiba-gray font-medium mb-6">Compiler notes, proof sketches, backend experiments, and deterministic systems logs.</p>
     <a
-      href="/blog"
+      href="/blog/"
       class="inline-flex items-center gap-2 text-xs font-bold text-chiba-green uppercase tracking-[0.2em] hover:text-chiba-text transition-colors border-b border-chiba-green/30 pb-1"
     >
       View All Posts
@@ -29,7 +29,7 @@ function truncate(str: string, max = 80) {
 
   <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-0">
     {posts.map((post) => (
-      <a href={`/blog/${post.id}`} class="block h-full">
+      <a href={`/blog/${post.id}/`} class="block h-full">
         <BentoCard class="bg-chiba-container-low group cursor-pointer hover:border-chiba-green/30 transition-colors h-full !p-0 overflow-hidden flex flex-col border-y border-chiba-line md:border-l first:md:border-l-0">
           {post.data.heroImage && (
             <div class="w-full h-36 overflow-hidden shrink-0 border-b border-chiba-line">

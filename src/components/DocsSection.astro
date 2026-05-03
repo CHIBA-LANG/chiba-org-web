@@ -3,7 +3,13 @@ import { getCollection } from 'astro:content';
 import BentoCard from './BentoCard.astro';
 import { extractMarkdownDescription, extractMarkdownTitle } from '../utils/content';
 
-const docs = (await getCollection('chiba_level1_spec')).slice(0, 4).map((entry) => ({
+const priorityDocIds = ['README', 'chibalex', 'chibacc', 'memory-model'];
+const allDocs = await getCollection('chiba_level1_spec');
+const docsById = new Map(allDocs.map((entry) => [entry.id, entry]));
+const docs = priorityDocIds.flatMap((id) => {
+  const entry = docsById.get(id);
+  return entry ? [entry] : [];
+}).map((entry) => ({
   ...entry,
   computedTitle: entry.data.title ?? extractMarkdownTitle(entry.body, entry.id),
   computedDescription: entry.data.description ?? extractMarkdownDescription(entry.body),
@@ -23,7 +29,7 @@ function truncate(str: string, max = 110) {
       <p class="text-chiba-gray">A site-native entry into the CHIBA level-1 spec, so readers can browse implementation-facing language rules without leaving the main site.</p>
     </div>
     <a
-      href="/docs"
+      href="/docs/"
       class="inline-flex items-center gap-2 text-xs font-bold text-chiba-green uppercase tracking-[0.2em] hover:text-chiba-text transition-colors border-b border-chiba-green/30 pb-1"
     >
       Browse Docs
@@ -33,7 +39,7 @@ function truncate(str: string, max = 110) {
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-0">
     {docs.map((doc) => (
-      <a href={`/docs/${doc.id}`} class="block h-full">
+      <a href={`/docs/${doc.id}/`} class="block h-full">
         <BentoCard class="bg-chiba-container-low group cursor-pointer hover:border-chiba-green/30 transition-colors h-full !p-0 overflow-hidden flex flex-col border-y border-chiba-line md:border-l first:md:border-l-0">
           <div class="flex flex-col flex-1 p-4">
             <div class="text-[10px] font-mono uppercase tracking-[0.18em] text-chiba-gray mb-3 border-b border-chiba-line pb-3">
