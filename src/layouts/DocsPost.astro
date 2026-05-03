@@ -1,0 +1,50 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import ArticleToc from '../components/ArticleToc.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  slug: string;
+}
+
+const SITE_URL = 'https://chiba-lang.org';
+const { title, description, slug } = Astro.props;
+const canonicalUrl = `${SITE_URL}/docs/${slug}`;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  ogType="article"
+  canonicalUrl={canonicalUrl}
+>
+  <main class="max-w-[1500px] mx-auto px-6 md:px-10 pt-32 pb-24">
+    <div class="flex gap-8 items-start justify-center">
+      <ArticleToc />
+
+      <div class="w-full max-w-6xl">
+        <div class="mb-10 border border-chiba-line bg-chiba-container overflow-hidden">
+          <header class="px-6 md:px-8 pt-6 pb-8 border-b border-chiba-line bg-[linear-gradient(180deg,rgba(0,230,118,0.08),transparent_70%)]">
+            <div class="text-[10px] font-mono font-bold uppercase tracking-[0.24em] text-chiba-gray mb-4">
+              CHIBA / DOCS / LEVEL-1 SPEC
+            </div>
+            <h1 class="font-space text-4xl md:text-6xl font-bold tracking-[-0.04em] uppercase text-chiba-text leading-[0.95] mb-4">
+              {title}
+            </h1>
+            <div class="max-w-3xl space-y-3 text-chiba-text-dim leading-relaxed">
+              <p>这里集中展示 CHIBA level-1 specification，覆盖 core language、control flow、memory、patterns、IR lowering 与 package system 等实现边界。</p>
+              <p>The docs surface keeps CHIBA level-1 specification pages browsable inside the site, with direct paths into language, control flow, memory, pattern, and lowering rules.</p>
+            </div>
+          </header>
+
+          <article class="px-6 md:px-8 py-8">
+            <div class="prose prose-docs max-w-none" data-article-content>
+              <slot />
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </main>
+</BaseLayout>

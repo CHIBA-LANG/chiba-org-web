@@ -29,4 +29,14 @@ const typeSystem = defineCollection({
 	}),
 });
 
-export const collections = { blog, type_system: typeSystem };
+const chibaLevel1Spec = defineCollection({
+	loader: glob({ base: './src/content/chiba-level1-spec', pattern: '**/*.{md,mdx}' }),
+	schema: z.object({
+		title: z.string().optional(),
+		description: z.string().optional(),
+		pubDate: z.coerce.date().optional(),
+		updatedDate: z.coerce.date().optional(),
+	}),
+});
+
+export const collections = { blog, type_system: typeSystem, chiba_level1_spec: chibaLevel1Spec };

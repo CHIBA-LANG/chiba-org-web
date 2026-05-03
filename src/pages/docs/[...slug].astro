@@ -1,0 +1,22 @@
+---
+import { getCollection, render } from 'astro:content';
+import DocsPost from '../../layouts/DocsPost.astro';
+import { extractMarkdownDescription, extractMarkdownTitle } from '../../utils/content';
+
+export async function getStaticPaths() {
+  const docs = await getCollection('chiba_level1_spec');
+  return docs.map((doc) => ({
+    params: { slug: doc.id },
+    props: doc,
+  }));
+}
+
+const doc = Astro.props;
+const { Content } = await render(doc);
+const title = doc.data.title ?? extractMarkdownTitle(doc.body ?? "", doc.id);
+const description = doc.data.description ?? extractMarkdownDescription(doc.body ?? "");
+---
+
+<DocsPost title={title} description={description} slug={doc.id}>
+  <Content />
+</DocsPost>

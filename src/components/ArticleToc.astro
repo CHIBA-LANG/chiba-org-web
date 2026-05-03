@@ -1,0 +1,79 @@
+---
+interface Props {
+  contentSelector?: string;
+  title?: string;
+}
+
+const { contentSelector = '[data-article-content]', title = 'On This Page' } = Astro.props;
+---
+
+<aside class="hidden xl:block xl:w-64 shrink-0">
+  <div class="sticky top-28 border border-chiba-line bg-chiba-container">
+    <div class="px-4 py-4 border-b border-chiba-line text-[10px] font-mono font-bold uppercase tracking-[0.22em] text-chiba-gray">
+      {title}
+    </div>
+    <nav id="article-toc" class="p-3 space-y-1 text-sm"></nav>
+  </div>
+</aside>
+
+<script define:vars={{ contentSelector }}>
+  function slugify(text) {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-\u4e00-\u9fff]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function buildArticleToc() {
+    const nav = document.getElementById('article-toc');
+    const article = document.querySelector(contentSelector);
+    if (!nav || !article) return;
+
+    const headings = Array.from(article.querySelectorAll('h2, h3'));
+    nav.innerHTML = '';
+
+    if (headings.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'px-3 py-2 text-xs text-chiba-gray';
+      empty.textContent = 'No sections';
+      nav.appendChild(empty);
+      return;
+    }
+
+    const usedIds = new Set();
+
+    for (const heading of headings) {
+      let id = heading.id || slugify(heading.textContent || 'section');
+      let suffix = 2;
+      while (!id || usedIds.has(id) || document.querySelectorAll(`#${CSS.escape(id)}`).length > (heading.id === id ? 1 : 0)) {
+        id = `${slugify(heading.textContent || 'section')}-${suffix}`;
+        suffix += 1;
+      }
+
+      usedIds.add(id);
+      heading.id = id;
+
+      const link = document.createElement('a');
+      link.href = `#${id}`;
+      link.textContent = heading.textContent || 'Section';
+      link.className = heading.tagName === 'H3'
+        ? 'block px-3 py-2 ml-3 text-xs text-chiba-gray hover:text-chiba-green transition-colors border-l border-chiba-line'
+        : 'block px-3 py-2 text-xs font-mono uppercase tracking-[0.16em] text-chiba-text-dim hover:text-chiba-green transition-colors';
+      nav.appendChild(link);
+    }
+  }
+
+  function scheduleArticleTocBuild() {
+    requestAnimationFrame(buildArticleToc);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', scheduleArticleTocBuild, { once: true });
+  } else {
+    scheduleArticleTocBuild();
+  }
+
+  document.addEventListener('astro:after-swap', buildArticleToc);
+</script>

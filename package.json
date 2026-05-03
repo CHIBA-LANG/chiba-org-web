@@ -30,5 +30,6 @@
   },
   "overrides": {
     "vite": "^7"
-  }
+  },
+  "packageManager": "npm@11.13.0"
 }
