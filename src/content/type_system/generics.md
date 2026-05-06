@@ -6,7 +6,12 @@
 
 本文只讨论 level-1。
 
-level-1 没有 interface，因此本文中的 generics 不依赖 `[T: X]` 之类的命名能力约束。
+level-1 没有传统 interface / trait solver。
+
+本文中的 generics 采用统一约束形式：
+
+- N 个 namespace-scoped named constraints
+- 最多 1 个 row constraint
 
 ## 0. Scope
 
@@ -14,7 +19,7 @@ This document defines the checking boundary, instantiation strategy, and compile
 
 It only discusses level-1.
 
-Because level-1 has no interface system, generics here do not depend on named capability constraints such as `[T: X]`.
+Because level-1 has no traditional interface system, generics here use a unified constrained-template form: N namespace-scoped named constraints plus at most one row constraint.
 
 ## 1. 总体方向
 
@@ -48,6 +53,7 @@ level-1 generic 可以依赖：
 
 - 普通 HM 推断
 - row / shape 约束
+- namespace-scoped named constraints
 - structural method obligation
 - operator obligation
 - shaped dispatch obligation
@@ -55,22 +61,48 @@ level-1 generic 可以依赖：
 
 level-1 generic 不能依赖：
 
-- interface
-- witness search
-- named capability solver
+- 传统 interface witness search
+- 全局 named capability solver
 - coherence 的完整规则
 
-但 level-2 若引入 interface constraints，则应继续沿用 local HM 路线：
+named constraint 只负责命名与复用，不引入全局 evidence search。
 
-- 不做全局 trait solver
-- 不把 interface constraint 直接压平成 plain row
-- 而是将其 elaboration 为局部 named bundle obligation
+当 generic 参数或返回值进入 `dyn` 世界时，所需 adapter 必须在实例化点被构造并打包，而不是留给运行时再做 impl 搜索。
 
 ## 2. Boundaries of Level-1 Generics
 
-Level-1 generics may depend on ordinary HM inference, row and shape constraints, structural method obligations, operator obligations, shaped dispatch obligations, and answer type checking.
+Level-1 generics may depend on ordinary HM inference, row and shape constraints, namespace-scoped named constraints, structural method obligations, operator obligations, shaped dispatch obligations, and answer type checking.
 
-They may not depend on interfaces, witness search, named capability solvers, or full coherence rules. If level-2 later introduces interface constraints, the correct direction is still local HM: no global trait solver, no flattening of interface constraints into plain rows, and instead elaboration into local named bundle obligations.
+They may not depend on a traditional interface solver, witness search, a global named-capability solver, or full coherence rules. Named constraints are for naming and reuse only; they do not introduce global evidence search. When generic values cross into the `dyn` world, the required adapters must be constructed at the instantiation site rather than searched for at runtime.
+
+## 2.1 约束形式
+
+Chiba 不使用 `where` 子句。
+
+generic constraint 统一写在：
+
+```chiba
+[T: X + Y + {r | name: String}]
+```
+
+规则固定为：
+
+- N 个 named constraints
+- 最多 1 个 row constraint
+
+named constraint 负责复用与错误信息；row constraint 负责直接表达 shape obligation。
+
+## 2.1 Constraint Form
+
+Chiba does not use `where` clauses.
+
+Generic constraints are written in one place:
+
+```chiba
+[T: X + Y + {r | name: String}]
+```
+
+The rule is fixed as: N named constraints plus at most one row constraint. Named constraints serve reuse and diagnostics; the row constraint carries the direct shape obligation.
 
 ## 3. 定义期检查
 
@@ -114,7 +146,7 @@ This includes field constraints, method resolution, operator resolution, and the
 
 ## 5. Structural Obligations
 
-level-1 generic 的核心不是 interface obligation，而是 structural obligation。
+level-1 generic 的核心不是 interface obligation，而是 structural obligation 加 named shape contract。
 
 这类 obligation 可以来自：
 
@@ -153,9 +185,9 @@ def call_len(v) = v.len()
 
 ## 5. Structural Obligations
 
-The core of a level-1 generic is not an interface obligation but a structural obligation. These obligations arise from field access, method calls, operators, and shape-based dispatch.
+The core of a level-1 generic is not an interface obligation but a structural obligation plus named shape contracts. These obligations arise from field access, method calls, operators, and shape-based dispatch.
 
-For example, `v.x` should produce a row-style constraint such as `typeof(v) unifies with {r | x: a}`, and `v.len()` should require that `len` resolves on the receiver shape at the concrete instantiation point. Structural obligations in level-1 and named interface obligations in level-2 are related, but they are not the same thing and should not be flattened into identical row facts during definition-time checking.
+For example, `v.x` should produce a row-style constraint such as `typeof(v) unifies with {r | x: a}`, and `v.len()` should require that `len` resolves on the receiver shape at the concrete instantiation point. Named constraints may package these requirements under stable names, but they are still discharged locally rather than by global witness search.
 
 ## 6. 与 Method / Operator / Dispatch 的关系
 
@@ -245,11 +277,10 @@ The practical consequence is light definition-time checking, lazy instantiation,
 - method/operator/dispatch 在具体实例下最终确认
 - specialization 结果可缓存
 
-若 level-2 引入 named interface constraint，则实例化模型进一步扩展为：
+若 level-2 引入 `via namespace`，则实例化模型进一步扩展为：
 
-- local named bundle obligation 在实例化点绑定到具体 implementation bundle
-- `via ns.path` 可直接固定 bundle source
-- bundle source 可进入 monomorphization key
+- 行为来源在调用点显式给出
+- 该来源可进入 monomorphization key
 - specialization 后允许直接 inline 对应实现
 
 这里是否最终走 monomorphization、部分共享代码、或混合策略，可在后续单独细化。
@@ -258,13 +289,13 @@ The practical consequence is light definition-time checking, lazy instantiation,
 
 The model assumed here is: first type the generic body, then attach obligations to that body, then collect concrete types and shapes at instantiation time, and finally confirm method, operator, and dispatch behavior under those concrete arguments.
 
-If level-2 later introduces named interface constraints, the model extends by binding local named bundle obligations to concrete implementation bundles. `via ns.path` can fix the bundle source directly, that source can enter the monomorphization key, and specialization may inline the resolved implementation.
+If level-2 later introduces `via namespace`, the model extends by treating the explicit behavior source as part of the instantiation context. That source may enter the monomorphization key, and specialization may inline the resolved implementation.
 
 ## 11. 非目标
 
 下列内容不是当前 level-1 generics 的首批目标：
 
-- interface constraints
+- traditional interface constraints
 - witness passing formalization
 - Rust 风格 trait solver
 - C++ 老模板式的“定义期几乎不检查”
@@ -272,12 +303,12 @@ If level-2 later introduces named interface constraints, the model extends by bi
 
 ## 11. Non-Goals
 
-The first generation of level-1 generics is not trying to support interface constraints, witness passing formalization, Rust-style trait solving, the old C++ template model where definition-time checking is nearly absent, or highly free continuation polymorphism.
+The first generation of level-1 generics is not trying to support a traditional interface solver, witness passing formalization, Rust-style trait solving, the old C++ template model where definition-time checking is nearly absent, or highly free continuation polymorphism.
 
 ## 12. 开放问题
 
 - 实例化 key 是否直接使用 normalized shape + concrete type tuple
-- named bundle source 是否总是进入实例化 key，还是仅在多 bundle 可见时进入
+- `via` 来源是否总是进入实例化 key，还是仅在显式使用时进入
 - 方法解析缓存与 generic specialization 缓存是否合并
 - 某些完全结构相同但名义类型不同的实例是否共享生成代码
 - generic × continuation 最终采用多严格的泛化限制
@@ -285,7 +316,7 @@ The first generation of level-1 generics is not trying to support interface cons
 ## 12. Open Questions
 
 - Should the instantiation key directly use `normalized shape + concrete type tuple`?
-- Should the named bundle source always enter the instantiation key, or only when multiple bundles are visible?
+- Should an explicit `via` source always enter the instantiation key, or only when used at the call site?
 - Should method-resolution caches and generic-specialization caches be unified?
 - Can two instances with the same structure but different nominal identities share generated code?
 - How strict should the final generalization limits be for `generic × continuation`?

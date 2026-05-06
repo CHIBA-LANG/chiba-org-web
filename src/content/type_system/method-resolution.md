@@ -6,13 +6,13 @@
 
 本文只讨论 level-1。
 
-level-1 没有 interface，因此本文讨论的是 structural method system，而不是 interface-based witness resolution。
+level-1 没有传统 interface / trait solver，因此本文讨论的是 nominal method system，而不是 interface-based witness resolution。
 
 ## 0. Scope
 
 This document defines the minimum rules for method resolution, operator overloading, and shape-based dispatch in Chiba level-1.
 
-It only discusses level-1. Since level-1 has no interface system, the topic here is a structural method system rather than interface-based witness resolution.
+It only discusses level-1. Since level-1 has no traditional interface system, the topic here is a nominal method system rather than interface-based witness resolution.
 
 ## 1. 设计要求
 
@@ -35,21 +35,21 @@ level-1 的方法解析不以“证明 `T : X`”为核心。
 
 它的核心是：
 
-- receiver 的 normalized shape 是什么
+- receiver 的 nominal identity 是什么
 - 当前 call site 需要哪个名字或 operator
 - 在当前 concrete instantiation 下有哪些候选
 - 哪个候选最具体且不歧义
 
-在 level-2 引入 interface 后，method resolution 仍应保持分层：
+在 level-2 引入 named constraint 与 `via` 后，method resolution 仍应保持分层：
 
-- level-1 structural methods
-- level-2 named interface bundles
+- level-1 nominal methods
+- level-2 `via namespace` 路径
 
 ## 2. Basic Rule
 
 Method resolution in level-1 is not centered on proving `T : X`.
 
-Instead, it is centered on the receiver's normalized shape, the requested name or operator at the call site, the candidates available under the current concrete instantiation, and the choice of the most specific non-ambiguous candidate. If level-2 later adds interfaces, the layering should remain explicit: structural methods in level-1 and named interface bundles in level-2.
+Instead, it is centered on the receiver's nominal identity, the requested name or operator at the call site, the candidates available under the current concrete instantiation, and the choice of the most specific non-ambiguous candidate. If level-2 later adds named constraints and `via`, the layering should remain explicit: nominal methods in level-1 and explicit `via namespace` paths in level-2.
 
 ## 3. `def Type.method(...)`
 
@@ -62,19 +62,17 @@ def Type.method(self, ...)
 这里的 `Type` 在 level-1 中可以是：
 
 - 名义类型
-- 结构性 shape 描述
-- 后续需要继续细化的 receiver pattern
 
 本文采用保守规则：
 
-- receiver 约束最终必须能落到 normalized shape 上
+- receiver 约束最终必须落到 nominal identity 上
 - 不依赖 interface witness
 
 ## 3. `def Type.method(...)`
 
 Level-1 allows method-style definitions such as `def Type.method(self, ...)`.
 
-Here `Type` may be a nominal type, a structural shape description, or a receiver pattern that still needs refinement later. The conservative rule is that the receiver constraint must ultimately reduce to a normalized shape and may not depend on interface witnesses.
+Here `Type` must be a nominal type in level-1. The conservative rule is that receiver constraints for methods reduce to nominal identity only and may not depend on interface witnesses.
 
 ## 4. Method Call
 
@@ -86,18 +84,18 @@ v.m(a, b)
 
 至少产生下面几类检查：
 
-- `v` 的 receiver shape
+- `v` 的 receiver nominal type
 - 名称 `m`
 - 参数形状与返回类型约束
 - 当前实例化下的候选集合
 
-最终结果不是通过 interface satisfaction 决定，而是通过 structural obligation + concrete shape 决定。
+最终结果不是通过 interface satisfaction 决定，而是通过 nominal identity 与 concrete instantiation 共同决定。
 
 ## 4. Method Calls
 
-A call like `v.m(a, b)` must at least inspect the receiver shape of `v`, the name `m`, the argument and return-type constraints, and the candidate set available under the current instantiation.
+A call like `v.m(a, b)` must at least inspect the receiver's nominal type, the name `m`, the argument and return-type constraints, and the candidate set available under the current instantiation.
 
-The result is not decided by interface satisfaction. It is decided by structural obligations plus the concrete shape.
+The result is not decided by interface satisfaction. It is decided by nominal identity and the concrete instantiation.
 
 ## 5. Operator Overloading
 
@@ -125,25 +123,21 @@ Infix, prefix, postfix, and forms such as `.*` should all be unified under an in
 
 ## 6. Shape-Based Dispatch
 
-shape-based dispatch 是 level-1 的既定目标。
+shape-based dispatch 仍然是 level-1 的既定目标，但它不再等同于 method resolution。
 
-因此 method resolution 的实现必须直接接受：
-
-- receiver shape 可能是结构性的
-- generic 形参的具体 shape 可能要等实例化时才知道
-- 某些决议只能在 concrete shape 上完成
+method resolution 只负责 nominal 方法；shape-based dispatch 属于独立的 structural obligation / codegen 路径。
 
 ## 6. Shape-Based Dispatch
 
-Shape-based dispatch is a built-in target of level-1, so method resolution must accept structural receiver shapes, generic parameters whose concrete shape is only known at instantiation time, and decisions that can be completed only on concrete shapes.
+Shape-based dispatch remains a built-in target of level-1, but it is no longer identified with method resolution. Method resolution is only for nominal methods; shape-based dispatch belongs to a separate structural-obligation and codegen path.
 
 ## 7. 候选筛选
 
 为了兼顾编译速度，候选筛选必须分层：
 
 - 先按名称或 operator 查候选集
-- 再按 receiver 的 normalized shape 做快速过滤
-- 再做精确的 structural match
+- 再按 receiver 的 nominal identity 做快速过滤
+- 再做精确的 nominal match
 - 最后选最具体且不冲突的候选
 
 实现层可结合：
@@ -155,9 +149,9 @@ Shape-based dispatch is a built-in target of level-1, so method resolution must 
 
 ## 7. Candidate Filtering
 
-To keep compile time under control, candidate filtering must be layered: first filter by name or operator, then quickly filter by normalized receiver shape, then run precise structural matching, and finally choose the most specific non-conflicting candidate.
+To keep compile time under control, candidate filtering must be layered: first filter by name or operator, then quickly filter by nominal identity and normalized receiver shape, then run precise structural matching, and finally choose the most specific non-conflicting candidate.
 
-The implementation may rely on canonical row or shape keys, field masks, popcount-like bucketing, and method-resolution caches.
+The implementation may rely on nominal method indexes, fast nominal-type filters, and method-resolution caches.
 
 ## 8. 与 Generics 的关系
 
@@ -178,55 +172,53 @@ The correct model is to generate method obligations during definition-time check
 
 ## 9. 与 Row 的关系
 
-row / shape 是 method resolution 的表示层。
+method resolution 只建立在名义类型之上。
 
-row 负责：
-
-- 表示 receiver 至少有哪些字段/结构约束
-- 提供 canonical receiver shape
-- 为缓存与快速过滤提供稳定 key
-
-method resolution 则负责：
+method resolution 负责：
 
 - 选候选
 - 判冲突
 - 给出最终目标实现
 
+名义类型负责：
+
+- 保留 receiver 的稳定语义身份
+- 避免同 shape 不同 type 的方法世界被混成一个
+
+row / shape 仍服务于字段访问、generic obligation 与 shape-based dispatch，但不参与默认方法查找。
+
 ## 9. Relation to Rows
 
-Rows and shapes are the representation layer for method resolution. They describe which fields or structural constraints are present on the receiver, provide a canonical receiver shape, and contribute stable keys for caching and quick filtering.
+Method resolution is built on nominal types. It chooses candidates, detects conflicts, and identifies the final implementation target, while rows and shapes remain available for field access, generic obligations, and shape-based dispatch outside the default method lookup.
 
-Method resolution itself is still responsible for choosing candidates, detecting conflicts, and identifying the final implementation target.
+## 10. 与 Named Constraint / `via` 的边界
 
-## 10. 与 Interface 的边界
-
-level-1 没有 interface。
+level-1 没有传统 interface 系统。
 
 因此本文明确不做：
 
 - witness search
 - `T : X` 风格的 satisfaction
-- interface coherence 规则
+- interface / trait coherence 规则
 
 这些都属于 level-2。
 
-但为了与 level-2 保持兼容，本文先固定两个前向规则：
+但为了与 level-2 保持兼容，本文先固定下面规则：
 
-1. named interface method 不应被压平成普通 structural row 事实
-2. 没有显式 qualify 时，structural method 优先于 interface-derived method
+1. namespace-scoped named constraint 不做全局传染
+2. `via namespace` 是显式行为来源选择
+3. 没有显式 `via` 时，普通 `x.m()` 不进入全局 evidence search
 
-当 level-2 引入：
+这意味着：
 
-- `Interface.method(x)`
-- `x.m() via ns.path`
+- `x.m() via ns.path` 进入显式 namespace 路径
+- 默认 `x.m()` 只看默认可见世界中的 nominal 候选
 
-时，这两类写法都应显式进入 named bundle 路径，而不是与默认 structural method lookup 混为一谈
+## 10. Boundary with Named Constraints and `via`
 
-## 10. Boundary with Interfaces
+Level-1 has no traditional interface system, so it does not perform witness search, `T : X`-style satisfaction, or interface/trait coherence rules. Those all belong to level-2.
 
-Level-1 has no interface system, so it does not perform witness search, `T : X`-style satisfaction, or interface coherence rules. Those all belong to level-2.
-
-To stay compatible with that future layer, two forward rules should already be fixed: named interface methods must not be flattened into ordinary structural row facts, and structural methods should win over interface-derived methods when there is no explicit qualification. Forms such as `Interface.method(x)` and `x.m() via ns.path` should enter a named-bundle path explicitly instead of being merged into default structural lookup.
+To stay compatible with that future layer, three forward rules should already be fixed: namespace-scoped named constraints must not become global evidence, `via namespace` is an explicit behavior-source path, and ordinary `x.m()` without `via` must not fall into a global evidence search.
 
 ## 11. 歧义与冲突
 
@@ -241,41 +233,37 @@ level-1 虽然没有完整 interface 系统，但 method resolution 仍必须回
 - 不存在唯一最具体候选时，直接报错
 - 不在 level-1 引入复杂全局 overlap 规则
 
-若未来同时存在：
+若未来同时存在默认候选与显式 `via` 路径，则默认规则应为：
 
-- structural candidate
-- interface-derived candidate
-
-则默认规则应为：
-
-- 显式 `via ns.path` 优先
-- 显式 `Interface.method(x)` 优先走 interface bundle
-- 普通 `x.m()` 默认 structural 优先
+- 显式 `via namespace` 优先于默认路径
+- 普通 `x.m()` 不自动吸入 namespace 外的命名约束
+- 同层没有唯一候选时直接报错
 
 ## 11. Ambiguity and Conflict
 
 Even without a full interface system, level-1 method resolution must answer what happens when two candidates match, when no uniquely most-specific candidate exists, or when operator and method syntax map into the same underlying namespace.
 
-The conservative rule is to error out whenever there is no unique most-specific candidate. If level-2 later introduces interface-derived candidates, explicit `via ns.path` and explicit `Interface.method(x)` should take priority, while ordinary `x.m()` should remain structural-first.
+The conservative rule is to error out whenever there is no unique most-specific candidate. If level-2 later introduces explicit `via namespace` paths, those paths should take priority over the default lookup, while ordinary `x.m()` should remain inside the default nominal world.
 
 ## 12. 编译速度约束
 
 为了兼顾编译速度，实现必须坚持：
 
 - 候选解析懒执行
-- 结果缓存到 concrete shape
+- 结果缓存到 concrete nominal instantiation
 - 不做 eager 全局扩散
 - 不要求 level-1 提前构造完整的 interface-like method table
+- 不让同 shape 不同 nominal type 在解析阶段被合并
 
 ## 12. Compile-Time Constraints
 
-To preserve compile speed, candidate resolution must remain lazy, cached on concrete shapes, free of eager global propagation, and free of any requirement that level-1 build a full interface-like method table in advance.
+To preserve compile speed, candidate resolution must remain lazy, cached on concrete nominal instantiations, free of eager global propagation, free of any requirement that level-1 build a full interface-like method table in advance, and careful not to collapse different nominal types merely because their shapes match.
 
 ## 13. 非目标
 
 下列内容不是当前 level-1 首批目标：
 
-- interface-based dispatch
+- traditional interface-based dispatch
 - witness / dictionary passing
 - 完整 coherence 形式化
 - 全局 eager method propagation
@@ -283,18 +271,16 @@ To preserve compile speed, candidate resolution must remain lazy, cached on conc
 
 ## 13. Non-Goals
 
-The first generation of level-1 method resolution is not trying to provide interface-based dispatch, witness or dictionary passing, a full formalization of coherence, eager global propagation of methods, or an overload solver built on top of a named capability system.
+The first generation of level-1 method resolution is not trying to provide traditional interface-based dispatch, witness or dictionary passing, a full formalization of coherence, eager global propagation of methods, or an overload solver built on top of a named capability system.
 
 ## 14. 开放问题
 
-- `Type` 在 `def Type.method(...)` 中允许到什么程度的 structural receiver syntax
 - operator 名称编码最终采用什么方案
 - shape dispatch 缓存与 generic 实例化缓存是否共享
 - method ambiguity 的错误信息如何尽量保持清晰
 
 ## 14. Open Questions
 
-- How much structural receiver syntax should `Type` be allowed to express inside `def Type.method(...)`?
 - What final encoding should operator names use?
 - Should shape-dispatch caches and generic-instantiation caches be shared?
 - How can ambiguity diagnostics stay clear when method resolution fails?

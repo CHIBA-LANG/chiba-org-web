@@ -42,9 +42,11 @@ level-1 包含：
 
 - HM 风格的一阶类型推断与 unify
 - row polymorphism
+- 名义类型携带 shape
 - shape-based method resolution
 - operator overloading
 - structural generics
+- 带 adapter 的 `dyn` 动态包
 - instantiation-time checking
 - `reset` / `shift` 的 answer type checking
 - 值类型与引用类型的区分
@@ -54,18 +56,14 @@ level-1 包含：
 
 level-2 再新增：
 
-- interface
-- Go-like interface method set
-- namespace 作为 implementation bundle
-- `via ns.path` 作为显式实现来源选择
-- `dyn Interface` 作为显式动态分发对象
-- named capability constraints
-- witness / dictionary / coherence 相关机制
-- 更正式的 satisfaction / specialization 规则
+- namespace-scoped named constraints
+- `via namespace` 作为显式行为来源选择
+- 更细的 dynamic/runtime shape 语义与优化策略
+- 更正式的 specialization / sharing 规则
 
 ### 2.3 明确边界
 
-level-1 没有 interface。
+level-1 没有传统 interface / trait 系统。
 
 这意味着 level-1 中 generic、method、operator、shape dispatch 都不能依赖命名能力系统，只能依赖：
 
@@ -74,21 +72,21 @@ level-1 没有 interface。
 - structural obligation
 - concrete instantiation 下的最终检查
 
-level-2 引入 interface 后，也不应把 named interface 直接压平为值类型自己的 row。
+同时，row 约束、named constraint 与 `dyn` 共用一套 contract 语言，但动态值进入运行时世界时总是通过 adapter packaging 完成。
 
-interface 约束应被看作独立于 value shape 的行为约束层。
+未来若保留 `interface` 这个表面语法，它也只应是 namespace 里的 named constraint，而不是 witness / dictionary / coherence 世界中的接口对象。
 
 ## 2. Boundary Between Level-1 and Level-2
 
-Level-1 includes first-order HM inference and unification, row polymorphism, shape-based method resolution, operator overloading, structural generics, instantiation-time checking, answer type checking for `reset` and `shift`, the distinction between value and reference types, and escape or memory legality tied to implicit `reset`.
+Level-1 includes first-order HM inference and unification, row polymorphism, nominal types carrying shapes, shape-based method resolution, operator overloading, structural generics, adapter-carrying `dyn` packages, instantiation-time checking, answer type checking for `reset` and `shift`, the distinction between value and reference types, and escape or memory legality tied to implicit `reset`.
 
-Level-2 then adds interfaces, Go-like interface method sets, namespaces as implementation bundles, explicit `via ns.path` bundle selection, `dyn Interface`, named capability constraints, witness and dictionary and coherence machinery, and more formal satisfaction and specialization rules. Because level-1 has no interfaces, generics, methods, operators, and shape dispatch at level-1 cannot rely on any named capability system. They must rely on ordinary inference, row or shape constraints, structural obligations, and final checking under concrete instantiations. When interfaces appear in level-2, they must remain a separate behavioral-constraint layer instead of being flattened into value-shape rows.
+Level-2 then adds namespace-scoped named constraints, explicit `via namespace` behavior selection, and more detailed runtime-shape semantics and specialization rules. Because level-1 has no traditional interface solver, generics, methods, operators, and shape dispatch at level-1 cannot rely on witness search or coherence machinery. They must rely on ordinary inference, row or shape constraints, structural obligations, and final checking under concrete instantiations. If the surface language keeps an `interface` keyword later, it should elaborate to a namespace-scoped named constraint rather than to a global runtime interface object. Dynamic values should continue to work through adapters selected at packaging time.
 
 ## 3. Level-1 类型系统总览
 
 level-1 的类型检查可以概括为：
 
-`HM + row/shape + structural obligation + answer type checking + escape legality`
+`HM + nominal+shape + structural obligation + dyn packaging + answer type checking + escape legality`
 
 level-1 采用下面的总原则：
 
@@ -100,14 +98,15 @@ level-1 采用下面的总原则：
 与 level-2 的衔接原则是：
 
 - value shape 继续由 row / shape 表示
-- behavior selection 在 level-2 中通过 named implementation bundle 进入系统
-- interface method 不直接覆盖 level-1 的 structural method world
+- behavior selection 在 level-2 中通过 `via namespace` 显式进入系统
+- named constraint 进入系统时保持 namespace 边界，不做全局传染
+- 动态值继续复用 row / named constraint 语言，但进入运行时时总是带 adapter
 
 ## 3. Level-1 Type System at a Glance
 
 The level-1 checker can be summarized as `HM + row/shape + structural obligation + answer type checking + escape legality`.
 
-The governing principles are that polymorphism should concentrate on value shapes, level-1 should not become a heavy global solver, continuation checks must stay local, and the combination of generics and continuations must not expand without control. The bridge to level-2 is that value shape remains represented by rows and shapes, behavioral selection enters through named implementation bundles, and interface methods do not overwrite the structural method world of level-1.
+The governing principles are that polymorphism should concentrate on value shapes, nominal identity must remain visible to the type checker, level-1 should not become a heavy global solver, continuation checks must stay local, and the combination of generics and continuations must not expand without control. The bridge to level-2 is that value shape remains represented by rows and shapes, behavior selection enters explicitly through `via namespace`, named constraints stay namespace-scoped, and every dynamic value enters runtime as an adapter-carrying package rather than through global impl search.
 
 ## 4. 类型分类
 
@@ -121,6 +120,7 @@ The governing principles are that polymorphism should concentrate on value shape
 - record
 - union value
 - function / closure value
+- 带 adapter 的 `dyn` 动态值
 
 ### 4.2 引用类型
 
@@ -152,6 +152,8 @@ level-1 需要至少显式表达：
 Value types include builtin scalars, tuples, ordinary `data`, records, union values, and function or closure values. Reference types include `Ptr[T]`, `Ref[T]`, and `UnsafeRef[T]`.
 
 Level-1 must distinguish value types from reference types explicitly because arena and escape rules, `send`, continuation capture, and answer-type legality all depend on that split. Continuation-related types should not be treated as a trivial subclass of ordinary values; level-1 must explicitly represent the `reset` boundary they belong to, the answer type of the current context, and answer-type consistency between capture and resume.
+
+Ordinary values are immutable by default. Mutation lives behind `Ref[T]` / `UnsafeRef[T]`, not inside the ordinary value-shape world.
 
 ## 5. HM 基础层
 
@@ -189,6 +191,7 @@ row 的职责是提供：
 - 字段存在性约束
 - 字段类型约束
 - 规范化后的 shape 表示
+- 静态 generic 与 `dyn` 动态包共用的 shape / contract 语言
 
 ### 6.2 语法方向
 
@@ -201,7 +204,7 @@ row 语法应尽量复用现有 record update / open record 的心智模型。
 
 ### 6.3 Row 的职责边界
 
-row / shape 是 level-1 method、operator、dispatch 的表示层，而不是另一套独立的全局 subtype 系统。
+row / shape 是 level-1 method、operator、dispatch 与 `dyn` typing 的表示层，而不是另一套独立的全局 subtype 系统。
 
 这意味着：
 
@@ -211,7 +214,7 @@ row / shape 是 level-1 method、operator、dispatch 的表示层，而不是另
 
 ## 6. Rows and Shapes
 
-Level-1 supports row polymorphism. Rows provide open and closed rows, field-presence constraints, field-type constraints, and normalized shape representations.
+Level-1 supports row polymorphism. Rows provide open and closed rows, field-presence constraints, field-type constraints, normalized shape representations, and the shared shape language used by both static generics and adapter-carrying `dyn` packages.
 
 The syntax direction should stay aligned with existing record-update intuition, using forms like `{base | field: value}` at the value layer and a corresponding direction at the type layer. Rows and shapes are the representation layer for methods, operators, and dispatch, not a second global subtype system. That is why rows must be canonical, fast to compare and cache, and must avoid turning into a global lattice with automatic subsumption at arbitrary positions.
 
@@ -230,11 +233,11 @@ level-1 明确包含：
 
 ### 7.1 方法解析
 
-level-1 的 method resolution 基于 receiver shape。
+level-1 的 method resolution 基于 receiver 的名义类型。
 
 其核心不是“证明 `T : X`”，而是：
 
-- 当前 receiver 的 normalized shape 是什么
+- 当前 receiver 的 nominal identity 是什么
 - 当前 concrete instantiation 下可用哪些候选
 - 哪个候选最具体且不冲突
 
@@ -256,13 +259,13 @@ shape dispatch 是 level-1 的已有目标，因此类型系统必须支持：
 
 Level-1 explicitly includes methods, operator overloading, shape-based dispatch, and structural generics, so it is not a pure HM system. These features are built on shape obligations rather than interfaces.
 
-Method resolution is driven by the receiver shape, the candidates available under a concrete instantiation, and the choice of the most specific non-conflicting candidate rather than by proving `T : X`. Operator overloading is another part of the same structural-obligation world. Shape dispatch requires fast filtering on concrete shapes, lazy candidate resolution, and caching of resolved results.
+Method resolution is driven by the receiver's nominal identity, the candidates available under a concrete instantiation, and the choice of the most specific non-conflicting candidate rather than by proving `T : X`. Operator overloading is another part of the same obligation world. Shape dispatch remains important, but it is not the same as default method lookup.
 
 ## 8. Generics
 
 ### 8.1 总体方向
 
-为了兼顾编译速度，level-1 的 generics 更接近“typed structural templates”，而不是 Rust 风格的重型约束系统。
+为了兼顾编译速度，level-1 的 generics 更接近“checked templates”，而不是 Rust 风格的重型约束系统。
 
 它不是老式 C++ template 的完全未类型化模式，但它也不是全局 trait solver。
 
@@ -287,7 +290,24 @@ generic body 在定义期仍然必须经过基本类型检查。
 - shaped dispatch 的最终选择
 - structural obligation 的兑现
 
-### 8.4 设计原则
+### 8.4 约束形式
+
+Chiba 不使用 `where` 子句。
+
+generic constraint 采用：
+
+```chiba
+[T: X + Y + {r | name: String}]
+```
+
+当前方向固定为：
+
+- N 个 named constraints
+- 最多 1 个 row constraint
+
+named constraint 用于命名与复用；row constraint 用于直接表达 shape obligation。
+
+### 8.5 设计原则
 
 level-1 generics 的目标是：
 
@@ -296,52 +316,19 @@ level-1 generics 的目标是：
 - 只为真正发生的实例化付费
 - 让缓存 key 尽量由 normalized shape 与 concrete type 构成
 
-## 8.5 Level-2 Interface 约束的进入方式
+### 8.6 Named Constraint 与 `via`
 
-当 level-2 引入：
+future level-2 若继续保留 `interface` 关键字，它也应只是 namespace-scoped named constraint 的表面语法。
 
-```chiba
-[T: Show]
-```
-
-时，约束不应直接翻译成 `T` 的值 row。
-
-正确方向是把它 elaboration 为局部的 named bundle obligation，例如：
-
-```text
-Show@T
-Show@T via pretty.debug
-```
-
-该 obligation 在局部环境中提供 receiver-oriented method assumptions，但仍保留：
-
-- interface identity
-- receiver type
-- implementation bundle source
-
-这种做法的目标是同时满足：
-
-- local HM 仍保持局部
-- `via` 语义不丢失
-- monomorphization 可以把 bundle source 放入实例 key
-- specialization 后可直接 inline 具体实现
-
-## 8.6 Structural 与 Interface 的优先级
-
-当 level-2 interface 进入系统后，默认调用优先级应为：
-
-1. 显式 `via ns.path`
-2. 显式 `Interface.method(x)`
-3. 普通 `x.m()` 时的 structural method
-4. 其余 interface-derived method candidates
+`via namespace` 不负责证明一个全局 interface witness，而是负责显式选择行为来源。`dyn` 则通过 packaging 时选定的 adapter 工作，而不是通过运行时 impl 搜索工作。
 
 ## 8. Generics
 
-To stay fast, level-1 generics should behave more like typed structural templates than like Rust-style heavy constraint systems or completely unchecked old C++ templates.
+To stay fast, level-1 generics should behave more like checked templates than like Rust-style heavy constraint systems or completely unchecked old C++ templates.
 
-At definition time, generic bodies must still pass basic type checking: HM inference, row and shape constraint generation, method and operator obligations, answer-type checking for `reset` and `shift`, and basic well-formedness. At instantiation time, the compiler then completes method resolution, operator resolution, shaped dispatch, and structural-obligation discharge under concrete shapes. If level-2 later introduces interface constraints such as `[T: Show]`, they should elaborate into local named bundle obligations like `Show@T` or `Show@T via pretty.debug`, keeping interface identity, receiver type, and implementation-bundle source intact. The default priority when interfaces exist should remain: explicit `via ns.path`, explicit `Interface.method(x)`, structural `x.m()`, and only then other interface-derived candidates.
+At definition time, generic bodies must still pass basic type checking: HM inference, row and shape constraint generation, method and operator obligations, answer-type checking for `reset` and `shift`, and basic well-formedness. At instantiation time, the compiler then completes method resolution, operator resolution, shaped dispatch, and structural-obligation discharge under concrete shapes. Named constraints remain namespace-scoped contracts rather than global witness objects. Dynamic values are not produced by runtime impl search; they are formed by packaging values together with the adapters required by the target `dyn` type.
 
-也就是说，在没有显式 qualify 的情况下，structural method 优先于 interface-derived method。
+Chiba does not use `where` clauses. The current constraint form is `[T: X + Y + {r | ...}]`: N named constraints plus at most one row constraint. Named constraints serve naming and reuse; the row constraint carries the direct shape obligation. If level-2 keeps an `interface` keyword, it should elaborate to a namespace-scoped named constraint rather than to a global witness object. `via namespace` then becomes an explicit behavior-selection path rather than evidence search.
 
 ## 9. Continuation 与 Answer Type
 
@@ -421,20 +408,21 @@ At minimum it must make clear that ordinary function calls imply implicit `reset
 为了保证编译速度，level-1 的实现需要遵守下面几条约束：
 
 - row / shape 表示必须 canonical
+- nominal identity 不能在类型检查阶段被 shape 抹掉
 - method / operator / dispatch 需要懒解析与缓存
 - generic obligation 只在实际实例化点兑现
-- 不引入 level-2 的 interface solver
+- `dyn` 与静态 row constraint / named constraint 共用 contract 语言，但进入运行时时总是带 adapter
 - 不引入 answer type polymorphism
 
 ## 12. Implementation Constraints
 
-To preserve compile speed, the implementation must keep row and shape representations canonical, make method and operator and dispatch resolution lazy and cacheable, discharge generic obligations only at actual instantiation points, avoid any level-2 interface solver, and avoid answer type polymorphism.
+To preserve compile speed, the implementation must keep row and shape representations canonical, keep nominal identity visible to the checker, make method and operator and dispatch resolution lazy and cacheable, discharge generic obligations only at actual instantiation points, package `dyn` values together with the required adapters instead of doing runtime impl search, and avoid answer type polymorphism.
 
 ## 13. 暂定非目标
 
 下列内容不属于当前 level-1 首批目标：
 
-- interface
+- 传统 trait / interface solver
 - witness / dictionary passing 的正式化
 - coherence 的完整规则
 - answer type polymorphism
@@ -443,4 +431,4 @@ To preserve compile speed, the implementation must keep row and shape representa
 
 ## 13. Provisional Non-Goals
 
-The first generation of level-1 is not trying to include interfaces, formally specify witness or dictionary passing, complete coherence rules, answer type polymorphism, highly free continuation generalization, or Rust-style heavy global constraint solving.
+The first generation of level-1 is not trying to include a traditional trait/interface solver, formally specify witness or dictionary passing, complete coherence rules, answer type polymorphism, highly free continuation generalization, or Rust-style heavy global constraint solving.
