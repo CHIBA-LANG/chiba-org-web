@@ -28,6 +28,8 @@
 
 在非 `#![Metal]` 的普通 level-1 代码里，`Ptr[T]` 与 `UnsafeRef[T]` 都应通过 `unsafe` 边界使用；`Ref[T]` 则仍是受控 safe 能力。
 
+顶层 `UnsafeRef[T]` 会 lower 成 static mutable unsafe handle。它可以跨 world 可见，但不自动携带同步协议；若需要语言约束的 shared mutation，应使用 Atomic。
+
 ## Usage
 
 ```chiba

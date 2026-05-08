@@ -51,6 +51,8 @@ level-1 包含：
 - `reset` / `shift` 的 answer type checking
 - 值类型与引用类型的区分
 - 与隐式 `reset` 对应的 escape / memory legality
+- level-1 并行模型所需的 `send` / `!send` / world boundary 骨架
+- 最小 Atomic 能力
 
 ### 2.2 Level-2
 
@@ -78,7 +80,7 @@ level-1 没有传统 interface / trait 系统。
 
 ## 2. Boundary Between Level-1 and Level-2
 
-Level-1 includes first-order HM inference and unification, row polymorphism, nominal types carrying shapes, shape-based method resolution, operator overloading, structural generics, adapter-carrying `dyn` packages, instantiation-time checking, answer type checking for `reset` and `shift`, the distinction between value and reference types, and escape or memory legality tied to implicit `reset`.
+Level-1 includes first-order HM inference and unification, row polymorphism, nominal types carrying shapes, shape-based method resolution, operator overloading, structural generics, adapter-carrying `dyn` packages, instantiation-time checking, answer type checking for `reset` and `shift`, the distinction between value and reference types, escape or memory legality tied to implicit `reset`, the `send` / `!send` / world-boundary skeleton needed by parallel compilation, and a minimal atomic capability.
 
 Level-2 then adds namespace-scoped named constraints, explicit `via namespace` behavior selection, and more detailed runtime-shape semantics and specialization rules. Because level-1 has no traditional interface solver, generics, methods, operators, and shape dispatch at level-1 cannot rely on witness search or coherence machinery. They must rely on ordinary inference, row or shape constraints, structural obligations, and final checking under concrete instantiations. If the surface language keeps an `interface` keyword later, it should elaborate to a namespace-scoped named constraint rather than to a global runtime interface object. Dynamic values should continue to work through adapters selected at packaging time.
 
@@ -116,6 +118,7 @@ The governing principles are that polymorphism should concentrate on value shape
 
 - builtin scalar
 - tuple
+- immutable `Array[T]`
 - 普通 `data`
 - record
 - union value
@@ -151,9 +154,17 @@ level-1 需要至少显式表达：
 
 Value types include builtin scalars, tuples, ordinary `data`, records, union values, and function or closure values. Reference types include `Ptr[T]`, `Ref[T]`, and `UnsafeRef[T]`.
 
+Tuples are positional row-backed values: `(A, B)` has generated fields `_1: A` and `_2: B`. User row/record values use named fields, while tuple field identities are generated from position and preserve arity and order.
+
 Level-1 must distinguish value types from reference types explicitly because arena and escape rules, `send`, continuation capture, and answer-type legality all depend on that split. Continuation-related types should not be treated as a trivial subclass of ordinary values; level-1 must explicitly represent the `reset` boundary they belong to, the answer type of the current context, and answer-type consistency between capture and resume.
 
-Ordinary values are immutable by default. Mutation lives behind `Ref[T]` / `UnsafeRef[T]`, not inside the ordinary value-shape world.
+Ordinary values are immutable by default. This includes `Array[T]`: an array value has no safe internal mutability in level-1. Mutation lives behind `Ref[T]` / `UnsafeRef[T]` / atomic capability types, not inside ordinary value containers.
+
+`Ref[T]` is the only safe mutation entry in level-1. Assignment `lhs := rhs` is legal when `lhs : Ref[T]` and `rhs : T`. Field assignment through a reference to a row value is syntax over whole-value replacement: if `a : Ref[row]`, then `a.b := c` means `a := { a.* | b: c }`. Element assignment does not make arrays mutable; `expr[idx] := v` is legal only when `expr[idx] : Ref[T]`. Therefore `Array[Ref[T]]` supports element assignment, while `Ref[Array[T]]` does not support direct element assignment.
+
+A top-level `Ref[T]` is legal only when the binding is explicitly marked `#[world_local]`. It denotes one cell per world, not shared global mutable state, and it does not make `Ref[T]` become `send`. Cross-world shared mutable state should use Atomic, or `UnsafeRef[T]` at an unsafe boundary.
+
+A top-level `UnsafeRef[T]` lowers to a static mutable unsafe handle. It may be visible across worlds, but the language does not guarantee synchronization, visibility, ordering, or data-race safety for it. Those guarantees must come from an unsafe protocol or a library wrapper.
 
 ## 5. HM 基础层
 

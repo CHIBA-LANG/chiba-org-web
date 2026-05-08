@@ -17,6 +17,7 @@
 
 - `#[entry]`
 - `#[derive(...)]`
+- `#[world_local]`
 
 ## 语义
 
@@ -25,6 +26,8 @@ file attrs 比 item attrs 优先
 同一 item 上多个 attrs 的组合规则为顺序执行
 
 item attrs 为特定定义附加额外编译含义，例如入口点、代码生成策略或后端约束。
+
+`#[world_local]` 可用于顶层静态值定义。特别地，顶层 `Ref[T]` 必须显式写 `#[world_local]`，表示每个 world 拥有独立 cell。需要跨 world 共享的可变状态请使用 Atomic，或在 unsafe 边界中使用 `UnsafeRef[T]`。
 
 当前方向允许 attribute 至少出现在下面这些位置：
 

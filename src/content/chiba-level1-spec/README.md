@@ -115,6 +115,8 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 
 - [x] level-1 managed object model
 - [x] 普通值默认是 managed value
+- [x] 普通值没有 safe internal mutability
+- [x] `Array[T]` 按 immutable managed value 处理
 - [x] 普通 `data` / tuple / record / closure env 的默认存储语义
 - [x] `Ptr[T]`
 - [x] `Ref[T]`
@@ -125,6 +127,7 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 - [x] `Ptr[T]` 与 FFI / Metal / ABI 边界
 - [x] `Ref[T]` 的读写与受控可变性
 - [x] `Ref[T]` 与 `send`
+- [x] Atomic 最小 shared mutation capability
 - [x] `#[sync]`
 	- 不进入 level-1 首发
 - [x] `send` 标注
@@ -191,6 +194,7 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 	- 支持单个 `_` 作为孔位
 	- 倒数第三弱优先级
 - [x] method call surface syntax
+- [ ] `dyn Constraint` / `dyn {r | ...}` dynamic package surface
 - [x] named arguments
 	- 不进入，且不作为后续方向
 - [x] interpolation / format string
@@ -211,9 +215,12 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 	- `*` deref
 - [-] `&` address-of / ref story
 	- level-1 去掉 `&` 作为 ref 开口
-- [ ] `:=` 与 Ref 相关语义
+- [x] `:=` 与 Ref 相关语义
 	- 返回右侧值，可 chain
 	- 倒数第二弱优先级
+	- 左侧必须为 `Ref[T]`
+	- `Ref[row]` 的 `a.b := c` 是 `a := { a.* | b: c }`
+	- `Array[Ref[T]]` 可下标赋值，`Ref[Array[T]]` 不可直接元素赋值
 - [-] `=` 绑定/定义语法
 	- 最弱，但不作为普通 operator
 - [x] operator overload protocol
@@ -331,10 +338,10 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 
 ## Level 2 预留
 
-- [ ] interface
-- [ ] Go-like interface method set
+- [ ] namespace-scoped named constraint
+- [ ] named constraint contract 展开规则
 - [ ] namespace 作为 implementation bundle
 - [ ] `via ns.path` 作为显式实现来源选择
-- [ ] interface method 的 local HM 翻译
-- [ ] `dyn Interface` 与动态分发对象
+- [ ] named constraint 的 local HM 翻译
+- [ ] `dyn Constraint` / `dyn {r | ...}` 与 adapter-carrying dynamic package
 

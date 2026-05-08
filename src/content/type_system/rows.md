@@ -108,6 +108,8 @@ Row = (base, sorted[(field_id, field_type)], openness)
 - 字段按稳定顺序排序
 - `openness` 表示这是 closed row，还是带 tail 的 open row
 
+tuple 使用同一套 row-backed 思路，但字段名由位置生成：第一个元素是 `_1`，第二个元素是 `_2`，依此类推。tuple 的位置字段是编译器生成的稳定字段 identity，不受用户 record 字段顺序规则影响。
+
 ## 4. Abstract Row Structure
 
 A row can be modeled as a base, a set of field constraints, and a closed-or-open marker.

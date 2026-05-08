@@ -8,11 +8,11 @@
 
 其语义和 `data` 不同，通常更靠近显式布局、低级表示或 ABI 边界。
 
-level-1 中，`union` 不作为普通业务建模工具，而保留给低级表示、Metal 与 C ABI 等布局敏感场景。
+level-1 中，`union` 不作为普通业务建模工具，只保留给 `#![Metal]` 的低级表示与布局敏感场景。
 
-它可以出现在 `#![Metal]` 这类显式低级模式下；在普通非 `#![Metal]` 代码里，若要使用 `union`，则应落在 `unsafe` 边界内。
+普通 FFI surface 只承诺 struct。`union` 只有在 `#![Metal]` 中可用；普通非 `#![Metal]` 代码不能通过 `unsafe` 直接启用 `union`。
 
-其布局方向与 C ABI 保持一致，而不是走普通 `data` 的 managed value 路线。
+其布局方向与目标低级 ABI 保持一致，而不是走普通 `data` 的 managed value 路线。
 
 ## Usage
 
@@ -29,4 +29,4 @@ union Bits {
 
 ## 边界
 
-普通 level-1 代码应优先使用 `data`；只有进入显式低级边界时才使用 `union`。
+普通 level-1 代码应使用 `data`；普通 FFI 使用 `#[repr("C")] type` 表达 struct layout。只有 `#![Metal]` 模式拥有 `union`。

@@ -33,15 +33,25 @@
 
 在 level-1 中，`UnsafeRef[T]` 一律 `send`。
 
+顶层 `UnsafeRef[T]` 可以作为 static mutable unsafe handle 存在。它不是 `#[world_local]`，而是所有 world 可见的 shared handle；语言不为它提供同步、可见性、ordering 或数据竞争安全保证。
+
+换言之：
+
+- `#[world_local] def x: Ref[T] = expr` 是每个 world 一份 safe local cell
+- `def x: UnsafeRef[T] = expr` 是 static mutable unsafe shared handle
+- `def x: Atomic[T] = expr` 才是受 atomic API 约束的 shared mutable state
+
 ## Usage
 
 ```chiba
 def share_file(x: UnsafeRef[File]): () = {
 	return ()
 }
+
+def shared_state: UnsafeRef[State] = open_shared_state()
 ```
 
-注释：`UnsafeRef[T]` 的 `send` 性质来自它在语言中的低级跨界角色，而不是来自“自动安全共享”。
+注释：`UnsafeRef[T]` 的 `send` 性质来自它在语言中的低级跨界角色，而不是来自“自动安全共享”。顶层 `UnsafeRef` 会落到 static mutable unsafe handle，访问协议由用户或库负责。
 
 ## 边界
 

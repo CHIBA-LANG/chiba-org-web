@@ -13,14 +13,15 @@
 
 当前边界是：
 
-- level-1 可以预留表面语法与默认语义位置
-- level-3 再引入完整的 world crossing / closure capture / storage legality 检查
+- level-1 固定并行模型所需的 `send` / `!send` / world boundary 基本语义
+- level-1 至少要能拒绝显然非法的 world crossing / closure capture / storage 写入
+- 后续层级可以扩展更完整的并发协议，但不得改变 `Ref`、ordinary value、Atomic 的根规则
 
 ## 0. Scope
 
 This document defines the semantic placement, surface syntax, and default classification rules for `send` and `!send` in Chiba.
 
-The goal is not to finish a full concurrency type system in one step, but to fix a few key points first: `send` is a builtin capability rather than an ordinary interface, `send` and `!send` can attach to specific type and declaration positions, closures and reference-like forms have default directions, and the full coloring check belongs to a later layer. The current boundary is to reserve syntax and defaults in level-1, and delay full world-crossing, closure-capture, and storage-legality checking to level-3.
+The goal is not to finish a full concurrency type system in one step, but level-1 must still fix the parallel-compilation model: `send` is a builtin capability rather than an ordinary interface, `send` and `!send` can attach to specific type and declaration positions, closures and reference-like forms have default directions, and the checker must reject obvious illegal world crossings, closure captures, and writes into `send`-requiring storage. Later layers may extend the concurrency protocol, but they must not change the root rules for `Ref`, ordinary values, and atomics.
 
 ## 1. 基本规则
 
@@ -58,8 +59,8 @@ The core concern of `send` and `!send` is world-boundary legality, storage legal
 例如：
 
 ```chiba
-type Job = ((Msg) -> Unit) send
-type LocalJob = ((Msg) -> Unit) !send
+type Job ((Msg) -> Unit) send
+type LocalJob ((Msg) -> Unit) !send
 ```
 
 该 qualifier 修饰的是整个类型表达式，而不是其中某个局部节点。
@@ -149,23 +150,51 @@ tuple、record、ADT 等结构值默认按成员递归决定 `send`：
 - 所有成员都是 `send`，则整体是 `send`
 - 任一成员是 `!send`，则整体是 `!send`
 
+`Array[T]` 是普通 immutable value，不带 safe internal mutability。它默认按元素类型递归决定 `send`：若 `T: send`，则 `Array[T]: send`；若 `T: !send`，则 `Array[T]: !send`。
+
 ### 4.3 `Ref[T]`
 
 `Ref[T]` 默认是 `!send`。
 
 `Ref[T]` 是单 world 的 safe aliasing / mutation 工具，不应默认跨 world 搬运。
 
-### 4.4 `Ptr[T]`
+顶层 `Ref[T]` 必须显式写 `#[world_local]`，表示每个 world 一份 cell；它仍然是 `!send`，不是 shared global mutable state。需要跨 world 共享的可变状态请使用 Atomic，或在 unsafe 边界中使用 `UnsafeRef[T]`。
+
+因此：
+
+- `Ref[Array[T]]` 是 `!send`
+- `Array[Ref[T]]` 是 `!send`
+- closure 捕获 `Ref[T]` 后默认 `!send`
+
+`Ref[T]` 不能通过成员都是 `send` 来洗成 `send`。
+
+### 4.4 Atomic
+
+Atomic capability 默认是 `send`，但只允许通过 atomic API 发生内部可变性。
+
+level-1 首发可采用很小的集合：
+
+- `Atomic[i32]`
+- `Atomic[i64]`
+- `Atomic[usize]`
+- `Atomic[bool]`
+- `Atomic[Ptr[T]]`
+
+Atomic API 首发暴露 ordering，集合接近 Rust：Relaxed / Acquire / Release / AcqRel / SeqCst。Ordering 是 atomic 操作参数，不属于 `send` 判定本身。
+
+### 4.5 `Ptr[T]`
 
 `Ptr[T]` 默认是 `send`。
 
 `Ptr[T]` 的危险性由 `unsafe` 负责，而不是由 `send` 再次否决。
 
-### 4.5 `UnsafeRef[T]`
+### 4.6 `UnsafeRef[T]`
 
 `UnsafeRef[T]` 默认是 `send`。
 
 `UnsafeRef[T]` 不是纯裸地址。
+
+顶层 `UnsafeRef[T]` 会 lower 成 static mutable unsafe handle。它可以跨 world 可见，但语言不保证它的同步、可见性、ordering 或数据竞争安全；这些责任属于 unsafe 协议或库层封装。
 
 它表示一种可跨 world 传递、可共享、且带保活语义的 unsafe handle。
 
@@ -185,13 +214,13 @@ tuple、record、ADT 等结构值默认按成员递归决定 `send`：
 
 这些责任由 `unsafe` 与用户侧协议承担。
 
-### 4.6 continuation
+### 4.7 continuation
 
 continuation 默认是 `!send`。
 
 continuation 天然携带 control boundary、answer type 与 arena legality，因此不应默认跨 world 传递。
 
-### 4.7 closure 与顶层函数项
+### 4.8 closure 与顶层函数项
 
 closure 是否为 `send` 取决于 capture 环境：
 
@@ -203,9 +232,9 @@ closure 是否为 `send` 取决于 capture 环境：
 
 ## 4. Default Classification
 
-Builtin scalar values are `send` by default. Tuples, records, and ADTs are classified recursively from their members: all-`send` members make the whole value `send`, while any `!send` member makes the whole value `!send`.
+Builtin scalar values are `send` by default. Tuples, records, ADTs, and immutable arrays are classified recursively from their members: all-`send` members make the whole value `send`, while any `!send` member makes the whole value `!send`.
 
-`Ref[T]` is `!send` by default because it is a single-world safe aliasing and mutation tool. `Ptr[T]` is `send` by default because its danger belongs to `unsafe`, not to `send`. `UnsafeRef[T]` is also `send` by default because it models a cross-world unsafe handle with liveness semantics, similar to an Arc-like shared-owned box. Continuations are `!send` by default because they carry control boundaries, answer types, and arena legality. Closures depend on their capture environment: capture-free closures are `send`, but any captured `!send` member makes the closure `!send`; moving a captured value does not wash a `!send` value into `send`. A top-level `def` has no closure environment, so it is `send` by default.
+`Array[T]` has no safe internal mutability in level-1, so `Array[T]` is `send` exactly when `T` is `send`. `Ref[T]` is `!send` by default because it is a single-world safe aliasing and mutation tool; therefore both `Ref[Array[T]]` and `Array[Ref[T]]` are `!send`. A top-level `Ref[T]` must be explicitly marked `#[world_local]`; it denotes one cell per world and remains `!send`. Cross-world shared mutable state should use Atomic, or `UnsafeRef[T]` at an unsafe boundary. Atomic capability types are `send`, but their mutation may only happen through atomic APIs; the first level-1 version may restrict `Atomic[T]` to scalar, boolean, usize, and pointer-like types and expose Rust-style ordering parameters. `Ptr[T]` is `send` by default because its danger belongs to `unsafe`, not to `send`. `UnsafeRef[T]` is also `send` by default because it models a cross-world unsafe handle with liveness semantics, similar to an Arc-like shared-owned box. Continuations are `!send` by default because they carry control boundaries, answer types, and arena legality. Closures depend on their capture environment: capture-free closures are `send`, but any captured `!send` member makes the closure `!send`; moving a captured value does not wash a `!send` value into `send`. A top-level `def` has no closure environment, so it is `send` by default.
 
 ## 5. 与函数检查的关系
 
@@ -279,15 +308,15 @@ That makes it possible to express both that a storage position requires cross-wo
 
 当前推荐分层是：
 
-- level-1：保留 `send` 语法位置与默认判定方向
+- level-1：固定 `send` 语法位置、默认判定、明显非法 world crossing / closure capture / storage 写入检查，以及 Atomic 基本能力
 - level-2：不把 `send` 纳入 interface / `via` / method resolution 世界
-- level-3：引入完整的 world crossing、closure capture、storage legality 染色检查
+- level-3：扩展更完整的 world crossing、closure capture、storage legality 染色检查
 
 ## 8. Layering Boundary
 
 This document fixes the semantic skeleton first and does not require level-1 to implement a full `send` checker immediately.
 
-The recommended layering is: level-1 reserves syntax positions and default classification, level-2 keeps `send` out of the interface, `via`, and method-resolution world, and level-3 introduces full coloring checks for world crossing, closure capture, and storage legality.
+The recommended layering is: level-1 fixes syntax positions, default classification, obvious illegal world-crossing / closure-capture / storage checks, and the minimal atomic capability; level-2 keeps `send` out of the interface, `via`, and method-resolution world; and level-3 extends the full coloring checks for world crossing, closure capture, and storage legality.
 
 ## 9. 非目标
 
@@ -297,7 +326,10 @@ The recommended layering is: level-1 reserves syntax positions and default class
 - 用 `via` 为 `send` 选择实现来源
 - 把 `send` 解释成函数调用 effect
 - 在 level-1 中完成全部并发安全证明
+- 让 `Array[T]` 获得 safe internal mutability
+- 让 `Ref[T]` 通过结构递归推导成 `send`
+- 为 Atomic 首发规定所有 target lowering 细节
 
 ## 9. Non-Goals
 
-The current goal is not to model `send` as an ordinary interface, not to use `via` to choose an implementation source for `send`, not to reinterpret `send` as a function-call effect, and not to finish a complete proof of concurrency safety inside level-1.
+The current goal is not to model `send` as an ordinary interface, not to use `via` to choose an implementation source for `send`, not to reinterpret `send` as a function-call effect, not to give `Array[T]` safe internal mutability, not to make `Ref[T]` become `send` through structural recursion, not to specify every target-level atomic lowering detail in the first version, and not to finish a complete proof of concurrency safety inside level-1.

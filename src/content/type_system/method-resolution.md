@@ -91,11 +91,21 @@ v.m(a, b)
 
 最终结果不是通过 interface satisfaction 决定，而是通过 nominal identity 与 concrete instantiation 共同决定。
 
+`a.b(c)` 的 callee 解析分三层：
+
+1. 若 `a` 是值表达式，且其值类型有字段 `b`，则选择 field callable，形成 `(a.b)(c)`。
+2. 否则，若 `typeof(a)` 的 nominal method set 中有方法 `b`，则选择 receiver method，形成 `TypeOf(a).b(a, c)`。
+3. 否则，若 `a` 是 type / namespace path，且 `a.b` 作为整体能解析到可调用项，则选择 qualified callee，形成 `(a.b)(c)`。
+
+第 3 层不做 receiver 注入；`a.b` 是整体名字。
+
 ## 4. Method Calls
 
 A call like `v.m(a, b)` must at least inspect the receiver's nominal type, the name `m`, the argument and return-type constraints, and the candidate set available under the current instantiation.
 
 The result is not decided by interface satisfaction. It is decided by nominal identity and the concrete instantiation.
+
+For `a.b(c)`, callee resolution is layered: if `a` is a value expression with field `b`, the call is `(a.b)(c)`; otherwise, if `typeof(a)` has nominal method `b`, the call lowers to `TypeOf(a).b(a, c)`; otherwise, if `a` is a type or namespace path and `a.b` resolves as a callable item, the call is `(a.b)(c)`. The qualified-callee case does not evaluate `a` and does not inject a receiver.
 
 ## 5. Operator Overloading
 
@@ -187,9 +197,13 @@ method resolution 负责：
 
 row / shape 仍服务于字段访问、generic obligation 与 shape-based dispatch，但不参与默认方法查找。
 
+因此 field callable 是 method resolution 之前的表达式解析结果；qualified callee 是 type / namespace path 解析结果。二者都不属于 receiver method candidate filtering。
+
 ## 9. Relation to Rows
 
 Method resolution is built on nominal types. It chooses candidates, detects conflicts, and identifies the final implementation target, while rows and shapes remain available for field access, generic obligations, and shape-based dispatch outside the default method lookup.
+
+Therefore field-callable resolution happens before method resolution, and qualified-callee resolution happens through type or namespace path lookup. Neither is part of receiver-method candidate filtering.
 
 ## 10. 与 Named Constraint / `via` 的边界
 

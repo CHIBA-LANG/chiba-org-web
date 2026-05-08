@@ -11,7 +11,7 @@ level-1 当前方向需要覆盖：
 
 ## 语义
 
-operator overloading 属于 structural method / obligation 系统的一部分，不依赖 interface witness。
+operator overloading 属于 level-1 的 method / obligation 系统一部分。它不依赖 interface witness，也不依赖运行时 impl 搜索；候选解析仍然应在 nominal world 与 concrete instantiation 上完成。
 
 ## Usage
 

@@ -26,7 +26,7 @@ def Type.method(self, ...)
 
 ## 语义
 
-这种写法把方法定义挂到某个 receiver 约束之上，但 level-1 不依赖 interface witness，而是最终落到 structural receiver shape 与 method resolution 规则。
+这种写法把方法定义挂到某个 nominal receiver type 之上。level-1 不依赖 interface witness，也不把 method receiver 降成 structural receiver shape；默认规则就是 nominal method resolution。
 
 method-style `def` 是 level-1 的正式能力。
 
@@ -43,4 +43,4 @@ def Vec2.norm(self): f32 = {
 }
 ```
 
-注释：`Vec2.norm` 采用 receiver 风格定义，surface 上是 method，但底层仍参与统一的函数与方法解析模型。
+注释：`Vec2.norm` 采用 receiver 风格定义，surface 上是 method，但它的归属仍然绑定到 `Vec2` 这个 nominal type，而不是绑定到某个 shape。

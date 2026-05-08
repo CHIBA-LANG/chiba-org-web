@@ -29,4 +29,4 @@ def demo(): () = {
 需要单独明确：
 
 - 哪些旧 helper 转换成哪些方法
-- method resolution 是否依赖 receiver shape 还是名义类型
+- method resolution 在字符串族上是否仍严格保持 nominal-only receiver

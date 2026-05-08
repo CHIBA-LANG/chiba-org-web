@@ -13,6 +13,7 @@ level-1 不采用 Rust 风格 borrow checker。
 level-1 的目标是：
 
 - 普通值默认走 managed value 路线
+- 普通值没有 safe internal mutability，`Array[T]` 也按普通 immutable value 处理
 - 普通函数调用与 closure 调用蕴含隐式 `reset`
 - `reset` 对应 arena / region 边界
 - 通过 escape 规则决定值是否需要提升
@@ -39,6 +40,7 @@ level-1 的普通 `data`、tuple、record、closure env 默认按 managed value 
 - 普通 record
 - 普通 `data`
 - closure value
+- immutable `Array[T]`
 
 ### 3.2 引用类型
 
@@ -69,11 +71,26 @@ level-1 的普通 `data`、tuple、record、closure env 默认按 managed value 
 
 它不是普通 record field 的默认存储方式，而是显式引入的可变性能力。
 
+顶层 `Ref[T]` 必须显式声明为 `#[world_local]`。其语义是每个 world 拥有独立 cell；它不是 shared global，也不改变 `Ref[T]` 的 `!send` 根规则。需要 shared global mutable state 时应使用 Atomic；需要低级 shared-owned unsafe handle 时使用 `UnsafeRef[T]`。
+
+`Ref[T]` 是 level-1 唯一 safe mutation 入口。`expr := value` 要求 `expr : Ref[T]` 且 `value : T`。
+
+普通值，包括 record、tuple、data 与 `Array[T]`，都不因自身类型获得 safe internal mutability。
+
+特别地：
+
+- `Array[T]` 没有 safe internal mutability
+- `Ref[Array[T]]` 可以替换整个 array value，但 `expr[idx] := value` 应报错
+- `Array[Ref[T]]` 的 `expr[idx] := value` 可以成立，因为 `expr[idx] : Ref[T]`
+- `Ref[row]` 的 `a.b := c` 是 `a := { a.* | b: c }` 的语义糖；实现可优化为 inplace update，但规范语义是 whole-value replacement
+
 ### 4.3 `UnsafeRef[T]`
 
 `UnsafeRef[T]` 是更低级的同步/并发边界能力。
 
 它与 `#[sync]`、跨 world 共享、以及后续更强同步规则相关。
+
+顶层 `UnsafeRef[T]` 会 lower 成 static mutable unsafe handle。它不是 world-local，也不提供语言级同步保证；并发访问、可见性、ordering 与数据竞争安全必须由用户或库层协议负责。需要语言约束的 shared mutation 时应使用 Atomic。
 
 ## 5. 隐式 `reset`
 
@@ -146,6 +163,8 @@ uniqueness 在 level-1 中可以是编译器内部事实，但不是要求用户
 
 当前方向应保持保守。
 
+level-1 同时固定最小 Atomic 能力：Atomic 值可以跨 world 共享并通过 atomic API 发生内部可变性。首发可只支持 scalar、bool、usize 和 pointer-like atomic，并采用接近 Rust 的显式 ordering 参数。
+
 ## 11. 与 Continuation 的关系
 
 continuation 不是纯粹的普通数据；它会把控制上下文与 arena 边界绑在一起。
@@ -177,7 +196,7 @@ generic 本体可以先收集 obligation，但实例化后的 concrete type / co
 
 - 完整 borrow checking
 - 复杂 region polymorphism
-- 依赖 interface 的内存能力系统
+- 依赖 named constraint / runtime impl search 的内存能力系统
 - 把普通数据类型全面变成显式 unique API
 
 ## 15. 开放问题

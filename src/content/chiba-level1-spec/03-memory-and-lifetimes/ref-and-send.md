@@ -12,6 +12,15 @@
 
 若程序需要跨 world 共享或发送，应转入 `UnsafeRef[T]` 或其他显式边界对象，而不是给 `Ref[T]` 打补丁。
 
+`Ref[T]` 的 `!send` 不会因为 `T: send` 而改变。
+
+因此：
+
+- `Ref[Array[T]]` 永远按 `Ref` 规则为 `!send`
+- `Array[Ref[T]]` 因元素 `Ref[T]` 为 `!send`，整体为 `!send`
+- closure 捕获 `Ref[T]` 后默认 `!send`
+- 需要跨 world 的共享可变性必须使用 Atomic、`UnsafeRef[T]` 或后续显式 shared capability
+
 ## Usage
 
 ```chiba

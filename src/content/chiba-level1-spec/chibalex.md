@@ -323,7 +323,7 @@ tokens :-
     //     len  : i64
     // }
     // 
-    // type TokenSpan = {
+    // type TokenSpan {
     //     token: Token
     //     span: Span
     // }
