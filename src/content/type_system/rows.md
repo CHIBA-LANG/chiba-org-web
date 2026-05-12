@@ -272,11 +272,37 @@ get_x : {r | x: a} -> a
 
 后续实例化时，再用 concrete shape 去兑现这个约束。
 
+函数参数可以直接写 row-bound shorthand：
+
+```chiba
+def get_name(v: {r | name: Str}) = v.name
+```
+
+它等价于：
+
+```chiba
+def get_name[T: {r | name: Str}](v: T) = v.name
+```
+
+这里的 `{r | name: Str}` 是 open-row obligation，表示参数 concrete shape 必须至少提供 `name: Str`。它不是 closed record type，也不是把 nominal type 擦成匿名 record。除非源码显式复用同一个命名类型变量，多个 row shorthand 参数各自引入不同的 fresh synthetic generic。
+
+未标注参数的字段访问也会自动生成同类 row obligation：
+
+```chiba
+def get_name(v) = v.name
+```
+
+检查后应得到与上面相同的 shape 约束，只是字段类型可以继续由使用点推断。
+
 ## 9. Relation to Structural Generics
 
 Because level-1 generics do not depend on interfaces, rows and shapes are one of their primary sources of structural constraints.
 
 For example, `def get_x(v) = v.x` should infer something like `get_x : {r | x: a} -> a`, and the concrete shape should discharge that constraint at instantiation time.
+
+Function parameters may use row-bound shorthand. For example, `def get_name(v: {r | name: Str}) = v.name` is equivalent to `def get_name[T: {r | name: Str}](v: T) = v.name`. The row is an open-row obligation: the concrete shape must provide at least `name: Str`. It is not a closed record type and does not erase nominal identity into an anonymous record. Unless the source explicitly reuses a named type variable, several row-shorthand parameters introduce separate fresh synthetic generics.
+
+Field access on an unannotated parameter generates the same kind of row obligation automatically. `def get_name(v) = v.name` should therefore infer the same shape constraint, with the field type still inferred from use.
 
 ## 10. 与 Method / Operator / Dispatch 的关系
 

@@ -119,11 +119,45 @@ generic body 在定义期不是黑盒。
 
 也就是说，generic body 必须先在当前抽象参数下可类型化。
 
+普通非 `extern` 函数也可以由省略参数类型触发隐式 generic。
+
+```chiba
+def f(a, b, c) = expr
+```
+
+检查器为未标注参数与未标注返回值建立 fresh inference variable，并用函数体的使用点收集约束。具体类型需求直接 unify；字段访问、method call、operator、shape dispatch 等需求生成 structural obligation。如果函数边界仍有未具体化的自由变量，这些变量与其 obligation 会被自动提升为隐式 generic 参数。
+
+显式 generic header 仍然优先；源码写出的 `[T: ...]` 是稳定的用户可见类型参数。隐式参数是检查器生成的 synthetic 参数，主要用于解释与后端 specialization。编译器不能因为函数实际是 generic 就要求用户给普通参数补类型标注；只有 inference 与 obligation 收集失败时才需要标注。
+
+`extern` 声明是例外：ABI 边界上的参数与返回值必须有显式 ABI 类型，不能靠隐式泛化推断。
+
+参数上的 row 约束可以直接写成 row-bound shorthand：
+
+```chiba
+def f(a: {r | name: Str}) = a.name
+```
+
+它等价于：
+
+```chiba
+def f[T: {r | name: Str}](a: T) = a.name
+```
+
+这个简写引入 fresh synthetic generic 参数。row 约束只描述 shape obligation，不抹掉 concrete nominal identity。
+
 ## 3. Definition-Time Checking
 
 The generic body is not a black box at definition time. The compiler must still allocate type variables, run ordinary HM unification, generate row and shape constraints, produce method and operator obligations, check `reset` and `shift`, and validate basic well-formedness.
 
 In short, a generic body must already be typeable under abstract parameters before any concrete instantiation exists.
+
+Ordinary non-`extern` functions may also become implicitly generic by omitting parameter annotations. For `def f(a, b, c) = expr`, the checker creates fresh inference variables for unannotated parameters and the unannotated return, then collects constraints from the body. Concrete requirements unify directly; field access, method calls, operators, and shape dispatch produce structural obligations. Free variables that remain at the function boundary are promoted, together with their obligations, into implicit generic parameters.
+
+Explicit generic headers still take precedence and remain stable user-visible type parameters. Implicit parameters are synthetic checker-generated parameters used for explanation and backend specialization. The compiler must not require ordinary parameter annotations merely because the inferred function is generic; annotations are only required when inference or obligation collection cannot determine the intended boundary.
+
+`extern` declarations are the exception: ABI parameters and returns must use explicit ABI types and cannot rely on implicit generalization.
+
+A row constraint on a parameter may be written as row-bound shorthand. For example, `def f(a: {r | name: Str}) = a.name` is equivalent to `def f[T: {r | name: Str}](a: T) = a.name`. The shorthand introduces a fresh synthetic generic parameter; the row bound describes a shape obligation without erasing concrete nominal identity.
 
 ## 4. 实例化期检查
 
