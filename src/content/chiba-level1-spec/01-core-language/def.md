@@ -48,6 +48,23 @@ def get_name[T: {r | name: a}](x: T): a = x.name
 
 这不是旧 C++ 模板式“定义期不检查”。函数体仍必须在抽象参数与已收集 obligation 下通过定义期类型检查。
 
+显式 `[T]` 是定义期 HM 环境中的类型变量 binder，但函数体检查时它是 rigid abstract type，不是可被函数体随意解成 concrete type 的 inference hole。
+
+因此：
+
+```chiba
+def bad[T, F](value: T): F = value
+```
+
+除非有其他约束证明 `T == F`，否则必须报错。返回类型写 `F` 不表示函数体能凭空构造 `F`。
+
+合法写法包括：
+
+```chiba
+def id[T](value: T): T = value
+def map_one[T, F](value: T, convert: fn(T): F): F = convert(value)
+```
+
 `extern` 是 ABI 边界，参数与返回值必须显式标注 ABI 类型，不能靠自动泛化。
 
 ## Row 参数简写
@@ -81,6 +98,23 @@ def Type.method(self, ...)
 ## 语义
 
 这种写法把方法定义挂到某个 nominal receiver type 之上。level-1 不依赖 interface witness，也不把 method receiver 降成 structural receiver shape；默认规则就是 nominal method resolution。
+
+`self` 绑定到 owner nominal type。method body 内可使用 receiver-scope alias `Self` 表示这个 owner type：
+
+```text
+Self := Type
+self : Self
+```
+
+若 owner 带 generic 参数，例如：
+
+```chiba
+type Box[T] { value: T }
+
+def Box[T].get(self): T = self.value
+```
+
+则 method scope 中 `Self := Box[T]`，`self : Box[T]`。`Self` 不是普通 top-level type name，也不是 row 约束；它只在 method receiver scope 内有效。
 
 method-style `def` 是 level-1 的正式能力。
 

@@ -129,6 +129,28 @@ def f(a, b, c) = expr
 
 显式 generic header 仍然优先；源码写出的 `[T: ...]` 是稳定的用户可见类型参数。隐式参数是检查器生成的 synthetic 参数，主要用于解释与后端 specialization。编译器不能因为函数实际是 generic 就要求用户给普通参数补类型标注；只有 inference 与 obligation 收集失败时才需要标注。
 
+源码写出的 `[T]` 在定义期是 HM 环境里的显式类型变量 binder，但在函数体检查时按 rigid abstract type 处理。也就是说，`T` 会参与普通 HM 检查与 constraint generation，却不是一个可以被函数体静默解成 concrete type 的 flexible inference hole。
+
+因此 `[T]` 同时属于两层：
+
+- 定义期：HM type binder，用于检查函数体
+- 实例化期：checked structural template 的 specialization 参数
+
+例如：
+
+```chiba
+def f[T, F](value: T): F = value
+```
+
+除非其他约束能证明 `T == F`，否则这个定义必须报错。返回类型写成 `F` 不表示函数体可以凭空构造 `F`，也不表示把 rigid `F` 解成 `T`。合法写法应把返回类型写成同一个变量，或显式提供转换：
+
+```chiba
+def id[T](value: T): T = value
+def map_one[T, F](value: T, convert: fn(T): F): F = convert(value)
+```
+
+若表达式本身是 diverging expression，例如 `panic()` / `todo()` 一类返回 `Never` 的表达式，则可流入任意返回类型；这是 `Never` 规则，不是 generic 的逃逸规则。
+
 `extern` 声明是例外：ABI 边界上的参数与返回值必须有显式 ABI 类型，不能靠隐式泛化推断。
 
 参数上的 row 约束可以直接写成 row-bound shorthand：
@@ -154,6 +176,14 @@ In short, a generic body must already be typeable under abstract parameters befo
 Ordinary non-`extern` functions may also become implicitly generic by omitting parameter annotations. For `def f(a, b, c) = expr`, the checker creates fresh inference variables for unannotated parameters and the unannotated return, then collects constraints from the body. Concrete requirements unify directly; field access, method calls, operators, and shape dispatch produce structural obligations. Free variables that remain at the function boundary are promoted, together with their obligations, into implicit generic parameters.
 
 Explicit generic headers still take precedence and remain stable user-visible type parameters. Implicit parameters are synthetic checker-generated parameters used for explanation and backend specialization. The compiler must not require ordinary parameter annotations merely because the inferred function is generic; annotations are only required when inference or obligation collection cannot determine the intended boundary.
+
+An explicit source-level `[T]` is a type-variable binder in the HM environment, but it is checked as a rigid abstract type inside the body. It participates in ordinary HM checking and constraint generation, but the body may not silently solve it to a concrete type as if it were a flexible inference hole.
+
+So `[T]` belongs to both layers: at definition time it is an HM type binder used to check the body; at instantiation time it is a checked-structural-template specialization parameter.
+
+For example, `def f[T, F](value: T): F = value` is ill-typed unless some other constraint proves `T == F`. Writing `F` as the return type does not let the body manufacture an `F`, and it does not solve the rigid `F` to `T`. The valid forms are to return the same variable, such as `def id[T](value: T): T = value`, or to provide a conversion, such as `def map_one[T, F](value: T, convert: fn(T): F): F = convert(value)`.
+
+A diverging expression with type `Never`, such as `panic()` or `todo()`, may flow into any return type. That is the `Never` rule, not a generic escape hatch.
 
 `extern` declarations are the exception: ABI parameters and returns must use explicit ABI types and cannot rely on implicit generalization.
 

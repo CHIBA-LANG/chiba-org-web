@@ -99,6 +99,8 @@ v.m(a, b)
 
 第 3 层不做 receiver 注入；`a.b` 是整体名字。
 
+row 约束不能证明 nominal method 存在。若定义期只知道 `a` 满足 `{r | b: ty}`，那么这个事实只说明字段 `b` 存在；它可以支持 `a.b` 的 field access，也可以在 `ty` 是函数类型时支持 `(a.b)(c)` 的 field-callable 路线，但不能因此选择 `def X.b(self, ...)`。receiver method 必须依赖 concrete nominal receiver，或在 generic body 中生成 method obligation，等实例化出 concrete nominal type 后再兑现。
+
 ## 4. Method Calls
 
 A call like `v.m(a, b)` must at least inspect the receiver's nominal type, the name `m`, the argument and return-type constraints, and the candidate set available under the current instantiation.
@@ -106,6 +108,44 @@ A call like `v.m(a, b)` must at least inspect the receiver's nominal type, the n
 The result is not decided by interface satisfaction. It is decided by nominal identity and the concrete instantiation.
 
 For `a.b(c)`, callee resolution is layered: if `a` is a value expression with field `b`, the call is `(a.b)(c)`; otherwise, if `typeof(a)` has nominal method `b`, the call lowers to `TypeOf(a).b(a, c)`; otherwise, if `a` is a type or namespace path and `a.b` resolves as a callable item, the call is `(a.b)(c)`. The qualified-callee case does not evaluate `a` and does not inject a receiver.
+
+A row constraint does not prove that a nominal method exists. If definition-time checking only knows that `a` satisfies `{r | b: ty}`, that fact proves field availability only. It may support `a.b` as field access, and it may support `a.b(c)` through the field-callable path when `ty` is a function type, but it must not select `def X.b(self, ...)`. Receiver-method resolution requires a concrete nominal receiver, or a method obligation in a generic body that is discharged after instantiation produces a concrete nominal type.
+
+## 4.1 `self` 与 `Self`
+
+method-style 定义：
+
+```chiba
+def X.y(self, arg: A): R = ...
+```
+
+把 `self` 绑定为 owner nominal type。method body 内引入特殊 receiver-scope alias：
+
+```text
+Self := X
+self : Self
+```
+
+method index key 是 `(nominal_id(X), "y")`，可调用形状是 `fn(Self, A) -> R`。
+
+generic owner 的方法中，`Self` 带上 owner 的类型参数：
+
+```chiba
+type Box[T] { value: T }
+def Box[T].get(self): T = self.value
+```
+
+这里 method scope 中有 `Self := Box[T]`，所以 `self : Box[T]`，`self.value : T`。
+
+`Self` 不是普通 top-level type name，不参与 row erasure，也不是可在非 method 位置自由引用的 generic 参数。
+
+## 4.1 `self` and `Self`
+
+A method-style definition such as `def X.y(self, arg: A): R = ...` binds `self` to the owner nominal type. Inside the method body, the checker introduces a receiver-scope alias `Self := X`, so `self : Self`. The method index key is `(nominal_id(X), "y")`, and the callable shape is `fn(Self, A) -> R`.
+
+For a generic owner, `Self` includes the owner's type arguments. In `type Box[T] { value: T }` plus `def Box[T].get(self): T = self.value`, the method scope has `Self := Box[T]`, so `self : Box[T]` and `self.value : T`.
+
+`Self` is not an ordinary top-level type name, not row erasure, and not a generic parameter that can be freely referenced outside a method receiver scope.
 
 ## 5. Operator Overloading
 
