@@ -22,7 +22,7 @@ def add(a, b) = a + b
 如果 `a`、`b` 没有被 concrete numeric 上下文约束，那么定义期应生成 operator obligation，并泛化成类似：
 
 ```chiba
-def add[T: {t | op_add: fn(Self, Self): Self}](a: T, b: T): T =
+def add[T: {t | op_add: (Self, Self) => Self}](a: T, b: T): T =
     a.op_add(b)
 ```
 

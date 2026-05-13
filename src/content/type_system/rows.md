@@ -267,7 +267,7 @@ def get_x(v) = v.x
 定义期应推出类似：
 
 ```text
-get_x : {r | x: a} -> a
+get_x : ({r | x: a}) => a
 ```
 
 后续实例化时，再用 concrete shape 去兑现这个约束。
@@ -298,7 +298,7 @@ def get_name(v) = v.name
 
 Because level-1 generics do not depend on interfaces, rows and shapes are one of their primary sources of structural constraints.
 
-For example, `def get_x(v) = v.x` should infer something like `get_x : {r | x: a} -> a`, and the concrete shape should discharge that constraint at instantiation time.
+For example, `def get_x(v) = v.x` should infer something like `get_x : ({r | x: a}) => a`, and the concrete shape should discharge that constraint at instantiation time.
 
 Function parameters may use row-bound shorthand. For example, `def get_name(v: {r | name: Str}) = v.name` is equivalent to `def get_name[T: {r | name: Str}](v: T) = v.name`. The row is an open-row obligation: the concrete shape must provide at least `name: Str`. It is not a closed record type and does not erase nominal identity into an anonymous record. Unless the source explicitly reuses a named type variable, several row-shorthand parameters introduce separate fresh synthetic generics.
 

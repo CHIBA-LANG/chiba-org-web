@@ -102,15 +102,15 @@ That continuation is not a trivial alias for an ordinary function value because 
 
 - 若某个洞位期望值类型 `A`
 - 当前 `reset` 的 answer type 为 `R`
-- 则被捕获 continuation 的直觉类型接近 `A -> R`
+- 则被捕获 continuation 的直觉类型接近 `(A) => R`
 
 同时，`shift` 的 body 也必须在同一个 `R` 下被检查。
 
-这里的 `A -> R` 只表达最小直觉，不表示 continuation 与普通 closure 在实现或合法性上完全同构。
+这里的 `(A) => R` 只表达最小直觉，不表示 continuation 与普通 closure 在实现或合法性上完全同构。
 
 ## 5. Minimal Typing Requirements
 
-The document does not yet spell out a complete formal typing derivation, but the level-1 intuition is clear: if a hole expects a value of type `A` and the current `reset` has answer type `R`, then the captured continuation behaves roughly like `A -> R`.
+The document does not yet spell out a complete formal typing derivation, but the level-1 intuition is clear: if a hole expects a value of type `A` and the current `reset` has answer type `R`, then the captured continuation behaves roughly like `(A) => R`.
 
 The body of `shift` must also be checked under that same `R`. This notation expresses the minimum intuition only; it does not mean continuations are identical to ordinary closures in implementation or legality.
 

@@ -25,7 +25,7 @@ def add(a, b) = a + b
 应生成 `op_add` obligation，并在同类型参数场景下泛化为类似：
 
 ```chiba
-def add[T: {t | op_add: fn(Self, Self): Self}](a: T, b: T): T
+def add[T: {t | op_add: (Self, Self) => Self}](a: T, b: T): T
 ```
 
 具体 `op_add` 实现只在 concrete instantiation / explicit behavior source / checked nominal conversion 后确定。

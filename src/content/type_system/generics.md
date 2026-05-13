@@ -146,7 +146,7 @@ def f[T, F](value: T): F = value
 
 ```chiba
 def id[T](value: T): T = value
-def map_one[T, F](value: T, convert: fn(T): F): F = convert(value)
+def map_one[T, F](value: T, convert: (T) => F): F = convert(value)
 ```
 
 若表达式本身是 diverging expression，例如 `panic()` / `todo()` 一类返回 `Never` 的表达式，则可流入任意返回类型；这是 `Never` 规则，不是 generic 的逃逸规则。
@@ -193,7 +193,7 @@ An explicit source-level `[T]` is a type-variable binder in the HM environment, 
 
 So `[T]` belongs to both layers: at definition time it is an HM type binder used to check the body; at instantiation time it is a checked-structural-template specialization parameter.
 
-For example, `def f[T, F](value: T): F = value` is ill-typed unless some other constraint proves `T == F`. Writing `F` as the return type does not let the body manufacture an `F`, and it does not solve the rigid `F` to `T`. The valid forms are to return the same variable, such as `def id[T](value: T): T = value`, or to provide a conversion, such as `def map_one[T, F](value: T, convert: fn(T): F): F = convert(value)`.
+For example, `def f[T, F](value: T): F = value` is ill-typed unless some other constraint proves `T == F`. Writing `F` as the return type does not let the body manufacture an `F`, and it does not solve the rigid `F` to `T`. The valid forms are to return the same variable, such as `def id[T](value: T): T = value`, or to provide a conversion, such as `def map_one[T, F](value: T, convert: (T) => F): F = convert(value)`.
 
 A diverging expression with type `Never`, such as `panic()` or `todo()`, may flow into any return type. That is the `Never` rule, not a generic escape hatch.
 

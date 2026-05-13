@@ -59,7 +59,7 @@ def add(a, b) = a + b
 在没有 concrete numeric 约束时，应泛化为 operator contract，形状类似：
 
 ```chiba
-def add[T: {t | op_add: fn(Self, Self): Self}](a: T, b: T): T =
+def add[T: {t | op_add: (Self, Self) => Self}](a: T, b: T): T =
     a.op_add(b)
 ```
 

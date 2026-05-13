@@ -142,7 +142,7 @@ Self := X
 self : Self
 ```
 
-method index key 是 `(nominal_id(X), "y")`，可调用形状是 `fn(Self, A) -> R`。
+method index key 是 `(nominal_id(X), "y")`，可调用形状是 `(Self, A) => R`。
 
 generic owner 的方法中，`Self` 带上 owner 的类型参数：
 
@@ -157,7 +157,7 @@ def Box[T].get(self): T = self.value
 
 ## 4.1 `self` and `Self`
 
-A method-style definition such as `def X.y(self, arg: A): R = ...` binds `self` to the owner nominal type. Inside the method body, the checker introduces a receiver-scope alias `Self := X`, so `self : Self`. The method index key is `(nominal_id(X), "y")`, and the callable shape is `fn(Self, A) -> R`.
+A method-style definition such as `def X.y(self, arg: A): R = ...` binds `self` to the owner nominal type. Inside the method body, the checker introduces a receiver-scope alias `Self := X`, so `self : Self`. The method index key is `(nominal_id(X), "y")`, and the callable shape is `(Self, A) => R`.
 
 For a generic owner, `Self` includes the owner's type arguments. In `type Box[T] { value: T }` plus `def Box[T].get(self): T = self.value`, the method scope has `Self := Box[T]`, so `self : Box[T]` and `self.value : T`.
 

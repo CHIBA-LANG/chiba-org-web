@@ -10,7 +10,7 @@
 
 因此，运算符协议与普通方法共享 nominal implementation world、namespace / behavior source 与 specialization 基础设施；差别在 surface token、operator protocol entry 和调用糖上。
 
-对抽象参数，operator 先表现为 structural operator obligation，而不是直接默认到某个 concrete numeric type。例如 `a + b` 可以生成 `op_add` obligation；当 `a`、`b` 是同一抽象类型时，默认 contract 类似 `T: {t | op_add: fn(Self, Self): Self}`。
+对抽象参数，operator 先表现为 structural operator obligation，而不是直接默认到某个 concrete numeric type。例如 `a + b` 可以生成 `op_add` obligation；当 `a`、`b` 是同一抽象类型时，默认 contract 类似 `T: {t | op_add: (Self, Self) => Self}`。
 
 这不是普通 row fact 直接进入 receiver method resolution。`op_add` 的具体实现仍由 concrete nominal type、显式 cast / checked conversion，或显式 behavior source 在实例化时决定。
 

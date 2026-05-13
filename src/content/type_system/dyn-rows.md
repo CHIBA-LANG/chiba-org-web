@@ -160,7 +160,7 @@ A dynamic `dyn` value such as `dyn {r | name: String}` or `dyn ToString` means t
 也就是说：
 
 ```text
-T -> dyn C
+T converts to dyn C
 ```
 
 在 expected type 已经是某个 `dyn C` 时可以自动发生。
@@ -168,7 +168,7 @@ T -> dyn C
 但反方向：
 
 ```text
-dyn C -> T
+dyn C converts to T
 ```
 
 不能自动发生，必须显式检查。
@@ -179,9 +179,9 @@ When the expected type is some `dyn` type, a static value may be injected automa
 
 At injection time, the compiler packages not only the value itself but also the corresponding adapter.
 
-In other words, `T -> dyn C` may happen automatically only when the expected type is already some `dyn C`.
+In other words, conversion from `T` to `dyn C` may happen automatically only when the expected type is already some `dyn C`.
 
-The reverse direction, `dyn C -> T`, may not happen automatically and must be checked explicitly.
+The reverse direction, from `dyn C` back to `T`, may not happen automatically and must be checked explicitly.
 
 ## 6. 与名义类型的关系
 

@@ -59,8 +59,8 @@ The core concern of `send` and `!send` is world-boundary legality, storage legal
 例如：
 
 ```chiba
-type Job ((Msg) -> Unit) send
-type LocalJob ((Msg) -> Unit) !send
+type Job ((Msg) => Unit) send
+type LocalJob ((Msg) => Unit) !send
 ```
 
 该 qualifier 修饰的是整个类型表达式，而不是其中某个局部节点。
@@ -113,7 +113,7 @@ data LocalCell !send = ...
 
 ## 2. Surface Syntax
 
-`send` and `!send` should be written as postfix qualifiers over complete type expressions, for example `((Msg) -> Unit) send` or `((Msg) -> Unit) !send`.
+`send` and `!send` should be written as postfix qualifiers over complete type expressions, for example `((Msg) => Unit) send` or `((Msg) => Unit) !send`.
 
 They may also appear inside generic constraints such as `[T: send]`, on function or closure signatures to describe the sendability of the callable value itself, and on nominal type declarations such as `data Packet send = ...` or `data LocalCell !send = ...`. The lexer only reserves `send`; `!send` is a negated type form, not an independent keyword.
 

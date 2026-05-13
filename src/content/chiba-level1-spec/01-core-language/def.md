@@ -62,7 +62,7 @@ def bad[T, F](value: T): F = value
 
 ```chiba
 def id[T](value: T): T = value
-def map_one[T, F](value: T, convert: fn(T): F): F = convert(value)
+def map_one[T, F](value: T, convert: (T) => F): F = convert(value)
 ```
 
 `extern` 是 ABI 边界，参数与返回值必须显式标注 ABI 类型，不能靠自动泛化。
