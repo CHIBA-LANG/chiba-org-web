@@ -43,7 +43,7 @@ level-1 包含：
 - HM 风格的一阶类型推断与 unify
 - row polymorphism
 - 名义类型携带 shape
-- shape-based method resolution
+- nominal method resolution
 - operator overloading
 - structural generics
 - 带 adapter 的 `dyn` 动态包
@@ -80,7 +80,7 @@ level-1 没有传统 interface / trait 系统。
 
 ## 2. Boundary Between Level-1 and Level-2
 
-Level-1 includes first-order HM inference and unification, row polymorphism, nominal types carrying shapes, shape-based method resolution, operator overloading, structural generics, adapter-carrying `dyn` packages, instantiation-time checking, answer type checking for `reset` and `shift`, the distinction between value and reference types, escape or memory legality tied to implicit `reset`, the `send` / `!send` / world-boundary skeleton needed by parallel compilation, and a minimal atomic capability.
+Level-1 includes first-order HM inference and unification, row polymorphism, nominal types carrying shapes, nominal method resolution, operator overloading, structural generics, adapter-carrying `dyn` packages, instantiation-time checking, answer type checking for `reset` and `shift`, the distinction between value and reference types, escape or memory legality tied to implicit `reset`, the `send` / `!send` / world-boundary skeleton needed by parallel compilation, and a minimal atomic capability.
 
 Level-2 then adds namespace-scoped named constraints, explicit `via namespace` behavior selection, and more detailed runtime-shape semantics and specialization rules. Because level-1 has no traditional interface solver, generics, methods, operators, and shape dispatch at level-1 cannot rely on witness search or coherence machinery. They must rely on ordinary inference, row or shape constraints, structural obligations, and final checking under concrete instantiations. If the surface language keeps an `interface` keyword later, it should elaborate to a namespace-scoped named constraint rather than to a global runtime interface object. Dynamic values should continue to work through adapters selected at packaging time.
 

@@ -45,11 +45,23 @@ level-1 的方法解析不以“证明 `T : X`”为核心。
 - level-1 nominal methods
 - level-2 `via namespace` 路径
 
+因此 method / operator obligation 的实现形状应预留 behavior source：
+
+```text
+DefaultVisible
+ExplicitVia(namespace_id)
+QualifiedPath(symbol_id)
+```
+
+当 behavior source 影响实现选择时，它必须进入 specialization key，避免同一 nominal type 与同一 method/operator 名称在不同 `via` 来源下复用错实现。
+
 ## 2. Basic Rule
 
 Method resolution in level-1 is not centered on proving `T : X`.
 
 Instead, it is centered on the receiver's nominal identity, the requested name or operator at the call site, the candidates available under the current concrete instantiation, and the choice of the most specific non-ambiguous candidate. If level-2 later adds named constraints and `via`, the layering should remain explicit: nominal methods in level-1 and explicit `via namespace` paths in level-2.
+
+Therefore method and operator obligations should reserve a behavior-source field such as `DefaultVisible`, `ExplicitVia(namespace_id)`, or `QualifiedPath(symbol_id)`. When the behavior source affects implementation choice, it must enter the specialization key so that different `via` sources cannot accidentally reuse the same generated instance.
 
 ## 3. `def Type.method(...)`
 
@@ -101,6 +113,8 @@ v.m(a, b)
 
 row 约束不能证明 nominal method 存在。若定义期只知道 `a` 满足 `{r | b: ty}`，那么这个事实只说明字段 `b` 存在；它可以支持 `a.b` 的 field access，也可以在 `ty` 是函数类型时支持 `(a.b)(c)` 的 field-callable 路线，但不能因此选择 `def X.b(self, ...)`。receiver method 必须依赖 concrete nominal receiver，或在 generic body 中生成 method obligation，等实例化出 concrete nominal type 后再兑现。
 
+若 row-shaped value 需要进入 nominal method world，必须先通过显式 cast / checked conversion 得到 concrete nominal type。没有这个转换时，row fact 不参与 receiver method resolution。
+
 ## 4. Method Calls
 
 A call like `v.m(a, b)` must at least inspect the receiver's nominal type, the name `m`, the argument and return-type constraints, and the candidate set available under the current instantiation.
@@ -110,6 +124,8 @@ The result is not decided by interface satisfaction. It is decided by nominal id
 For `a.b(c)`, callee resolution is layered: if `a` is a value expression with field `b`, the call is `(a.b)(c)`; otherwise, if `typeof(a)` has nominal method `b`, the call lowers to `TypeOf(a).b(a, c)`; otherwise, if `a` is a type or namespace path and `a.b` resolves as a callable item, the call is `(a.b)(c)`. The qualified-callee case does not evaluate `a` and does not inject a receiver.
 
 A row constraint does not prove that a nominal method exists. If definition-time checking only knows that `a` satisfies `{r | b: ty}`, that fact proves field availability only. It may support `a.b` as field access, and it may support `a.b(c)` through the field-callable path when `ty` is a function type, but it must not select `def X.b(self, ...)`. Receiver-method resolution requires a concrete nominal receiver, or a method obligation in a generic body that is discharged after instantiation produces a concrete nominal type.
+
+If a row-shaped value needs to enter the nominal method world, it must first go through an explicit cast or checked conversion to a concrete nominal type. Without that conversion, row facts do not participate in receiver-method resolution.
 
 ## 4.1 `self` 与 `Self`
 

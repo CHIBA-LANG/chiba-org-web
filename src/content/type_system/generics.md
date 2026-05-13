@@ -151,6 +151,18 @@ def map_one[T, F](value: T, convert: fn(T): F): F = convert(value)
 
 若表达式本身是 diverging expression，例如 `panic()` / `todo()` 一类返回 `Never` 的表达式，则可流入任意返回类型；这是 `Never` 规则，不是 generic 的逃逸规则。
 
+省略类型标注时使用 flexible inference variable。如果这些 variable 在函数边界处仍可合法泛化，则提升为 synthetic generic binder；如果它们落在必须具体化或不能自由泛化的位置，则要求显式标注。
+
+例如 `Ref.new(None)` 的类型形状是 `Ref[Option[T]]`。如果没有标注或上下文固定 `T`，这里必须报错，不能泛化成 polymorphic mutable `Ref`。
+
+level-2 可以加入显式 flexible generic binder：
+
+```chiba
+def f[?T](value: ?T) = ...
+```
+
+`[?T]` 表示源码显式要求 flexible 推断。它不是 level-1 core；level-1 中 `[T]` 仍是 rigid explicit generic，省略标注才走 flexible inference path。
+
 `extern` 声明是例外：ABI 边界上的参数与返回值必须有显式 ABI 类型，不能靠隐式泛化推断。
 
 参数上的 row 约束可以直接写成 row-bound shorthand：
@@ -184,6 +196,12 @@ So `[T]` belongs to both layers: at definition time it is an HM type binder used
 For example, `def f[T, F](value: T): F = value` is ill-typed unless some other constraint proves `T == F`. Writing `F` as the return type does not let the body manufacture an `F`, and it does not solve the rigid `F` to `T`. The valid forms are to return the same variable, such as `def id[T](value: T): T = value`, or to provide a conversion, such as `def map_one[T, F](value: T, convert: fn(T): F): F = convert(value)`.
 
 A diverging expression with type `Never`, such as `panic()` or `todo()`, may flow into any return type. That is the `Never` rule, not a generic escape hatch.
+
+Omitted type annotations use flexible inference variables. If those variables remain legal to generalize at a function boundary, they are promoted to synthetic generic binders; if they appear in positions that must be concrete or cannot be freely generalized, annotations are required.
+
+For example, `Ref.new(None)` has shape `Ref[Option[T]]`. Without an annotation or contextual use that fixes `T`, this must be rejected rather than generalized into a polymorphic mutable `Ref`.
+
+Level-2 may add explicit flexible generic binders such as `def f[?T](value: ?T) = ...`. `[?T]` means the source explicitly requests flexible inference. It is not part of the level-1 core; in level-1, `[T]` remains a rigid explicit generic and omitted annotations are the flexible inference path.
 
 `extern` declarations are the exception: ABI parameters and returns must use explicit ABI types and cannot rely on implicit generalization.
 
