@@ -18,7 +18,15 @@ level-1 不必要求所有位置共享完全相同的 pattern 能力。
 - `match`：支持 DFT pattern，嵌套深度任意
 - `let`：支持 tuple / record destruct 的 DFT pattern，嵌套深度任意
 - `if let`：支持 DFT pattern，嵌套深度任意
-- function parameter：不因 `match` / `let` / `if let` 支持 DFT 就自动获得同等能力
+- function parameter：首发至少支持 name parameter 与 wildcard parameter `_`；不因 `match` / `let` / `if let` 支持 DFT 就自动获得同等能力
+
+`_` 是 pattern-level wildcard，不是 identifier。它可以在 `match` / `if let` / `let` / function parameter 中匹配任意值并丢弃，不引入 binding，也不允许被后续表达式引用。
+
+因此：
+
+- `let _ = value` 不绑定 `_`
+- `def f(_) = body` 接收一个参数但不在 `body` 中绑定名字
+- `match value { _ => expr }` 的 `_` 只表示 fallback pattern
 
 在当前方向下，`name @ pattern` 的 at pattern 至少进入：
 
@@ -58,5 +66,5 @@ let { x, y } = point
 需要单独明确：
 
 - 哪些位置先只支持 irrefutable pattern
-- function parameter 等其他位置是否首发不支持 record / nested pattern，或只支持受限深度
+- function parameter 等其他位置是否首发不支持 record / nested pattern，或只支持受限深度；但 `_` wildcard parameter 是合法的最小 pattern
 - `let` 是否明确排除 constructor / literal pattern

@@ -15,6 +15,9 @@
 - tuple destruct
 - wildcard destruct
 
+`_` 在 `let` 左侧是 wildcard pattern，不是 variable，不向当前作用域引入绑定。
+因此 `let _ = expr` 的语义是“求值并丢弃结果”，后续表达式不能通过 `_` 引用该结果。
+
 ## 语义
 
 level-1 的 `let` 不是默认 `let rec`。
@@ -64,6 +67,7 @@ level-1 的 `let` destruct 采用 DFT（depth-first destructuring）方向。
 当前方向是：
 
 - `let` 允许变量绑定、tuple destruct、record destruct，以及其中递归嵌套的 wildcard / at pattern / var pattern
+- wildcard 写作 `_`，它只匹配并丢弃当前位置的值，不产生 binding，也不参与 shadowing
 - `let` 不把 data constructor、字符串字面量、数字字面量等 refutable pattern 作为首发 destruct 入口
 - 合法 `let` 不存在运行期“匹配失败”；不合法形式应在类型期直接拒绝
 
@@ -77,4 +81,3 @@ let { name, age } = user
 ```
 
 注释：`let` 负责普通绑定与 tuple/record destruct；它不承担 refutable pattern 的运行期匹配职责。
-
