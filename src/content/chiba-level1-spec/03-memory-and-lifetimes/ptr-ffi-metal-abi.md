@@ -39,6 +39,18 @@ type Point {
 
 `#[repr("C")] type` 只描述 struct layout。FFI struct 参数、返回值和 `Ptr[T]` 指向的内存应使用这种 repr type。普通非 repr `type` 不能被假定为 C struct；需要跨边界时必须显式转换、拷贝或通过专门 ABI wrapper。
 
+`_ : T` 在 `type` / `union` field 位置永远是 Chiba phantom field，不是 C ABI field/member。若 C header 中真实字段名为 `_`，Chiba 侧必须使用普通字段名并显式标注 C 名：
+
+```chiba
+#[repr("C")]
+type Header {
+	#[cname(field="_")]
+	field: i32,
+}
+```
+
+`cname(field="_")` 只改变 ABI 名字映射，不改变 Chiba 侧 field access 名字。
+
 允许字段应限于 FFI-safe 类型：固定宽度整数、`f32` / `f64`、`Ptr[T]`、以及嵌套的 `#[repr("C")] type`。普通 managed `String`、`Array[T]`、closure、`Ref[T]`、普通 `data` 不属于首发 FFI-safe struct field。
 
 普通 FFI 只承诺 struct surface；`union` 只在 `#![Metal]` 中可用。

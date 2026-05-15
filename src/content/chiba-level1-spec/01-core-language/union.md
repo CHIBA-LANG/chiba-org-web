@@ -22,10 +22,29 @@ level-1 中，`union` 不作为普通业务建模工具，只保留给 `#![Metal
 union Bits {
 	u32v: u32,
 	f32v: f32,
+	_: LayoutMarker,
 }
 ```
 
 注释：`union` 是低级布局工具，不参与 `data` 的构造子与模式匹配语义。
+
+`union` field 位置的 `_ : T` 与 `type` 中相同，是 phantom field，不是实际 union member 名：
+
+- 不进入 ordinary union member set
+- 不参与 duplicate-field 检查
+- 可以重复出现
+- 不代表 C ABI 中名为 `_` 的 union member
+
+若 C union 真的有名为 `_` 的 member，使用普通 Chiba 字段名并通过 ABI 属性指定 C 名：
+
+```chiba
+#![Metal]
+
+union CBits {
+	#[cname(field="_")]
+	field: u32,
+}
+```
 
 ## 边界
 
