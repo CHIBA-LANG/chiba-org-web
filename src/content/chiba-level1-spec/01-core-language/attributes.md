@@ -51,6 +51,18 @@ def native_non_wasi(): i64 = 1
 
 `compile_if` 的判断必须发生在当前编译单元进入正式 item collection 之前。被禁用 item 不应产生 binding、method candidate、namespace export、generic instantiation 或 backend symbol。
 
+因此，互斥 target 下的同名 item 不构成重名冲突：
+
+```chiba
+#[compile_if(backend="native")]
+def name() = {}
+
+#[compile_if(backend="wasm")]
+def name() = {}
+```
+
+当前编译目标只会看到其中一个定义，codegen 也只会为可见定义生成符号。
+
 条件表达式只读取编译上下文，不读取普通 Chiba 值，也不运行用户代码。
 
 unknown predicate、unknown key、参数数量错误或非 string 的 key value 都是 compile-time error。

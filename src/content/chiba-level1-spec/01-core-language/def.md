@@ -22,6 +22,28 @@ def f(a, b, c) = expr
 
 `a`、`b`、`c` 会先获得 fresh inference variable。函数体的使用点负责收集约束：具体类型需求按普通 unify 处理；字段访问、method call、operator、shape dispatch 等需求生成 structural obligation。函数体检查完成后，仍未具体化的自由变量与其 obligation 在函数边界自动泛化为隐式 generic 参数。
 
+函数参数本体是 pattern，而不是单独的“参数名语法”。`def f(a)` 中的 `a` 是 identifier pattern；`def f(_)` 中的 `_` 是 wildcard pattern；`def f(Some(x): Option[X])` 中的 `Some(x)` 是 constructor pattern，后面的 `: Option[X]` 标注整个参数 value 的类型。
+
+同一 callable name 可以用不同顶层参数 pattern 写多个 clause。多个 pattern clause 不构成普通重名冲突；item collection 后、类型检查和 lowering 前，compiler 会把它们合成为一个 dispatcher wrapper，并把每个 clause body 降为私有实现函数。示意如下：
+
+```chiba
+def name(Some(x): Option[X]): Y = { body_some }
+def name(None: Option[X]): Y = { body_none }
+```
+
+语义上等价于：
+
+```chiba
+def name(value: Option[X]): Y = {
+	match value {
+		Some(x) => private_clause_some(x)
+		None => private_clause_none()
+	}
+}
+```
+
+这里的 `private_clause_*` 只是说明 lowering 形状，不是规定真实符号名。clause 合成必须保持诊断位置、泛型 binder、返回类型、可见性与 attribute 语义；不能依赖大小写启发式决定一个参数是不是 pattern。
+
 例如：
 
 ```chiba
