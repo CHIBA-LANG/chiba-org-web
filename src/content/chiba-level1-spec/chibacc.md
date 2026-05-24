@@ -505,6 +505,60 @@ rule item ::=
     => Item(attrs, priv != None, body)
     ;
 
+rule item_attr ::=
+    Hash LBracket path:attr_path args:attr_args? RBracket
+    => Attribute(path, args.unwrap_or(Vec[AttrArg].new()), false)
+    ;
+
+rule file_attr ::=
+    HashBang LBracket path:attr_path args:attr_args? RBracket
+    => Attribute(path, args.unwrap_or(Vec[AttrArg].new()), true)
+    ;
+
+rule attr_path ::=
+    head:Ident tail:(ColonColon Ident)*
+    => AttrPath(head, tail)
+    ;
+
+rule attr_args ::=
+    LParen args:attr_arg_list? RParen
+    => args.unwrap_or(Vec[AttrArg].new())
+    ;
+
+rule attr_arg_list ::=
+    first:attr_arg rest:(Comma attr_arg)* Comma?
+    => cons_attr_arg(first, rest)
+    ;
+
+rule attr_arg ::=
+      name:Ident Eq value:attr_arg
+      => AttrNamed(name, value)
+    | name:Ident LParen args:attr_arg_list? RParen
+      => AttrCall(name, args.unwrap_or(Vec[AttrArg].new()))
+    | LBracket args:attr_arg_list? RBracket
+      => AttrList(args.unwrap_or(Vec[AttrArg].new()))
+    | LBrace fields:attr_field_list? RBrace
+      => AttrObject(fields.unwrap_or(Vec[(Ident, AttrArg)].new()))
+    | name:Ident
+      => AttrBare(name)
+    | value:Str
+      => AttrString(value)
+    | value:Int
+      => AttrInt(value)
+    | value:Bool
+      => AttrBool(value)
+    ;
+
+rule attr_field_list ::=
+    first:attr_field rest:(Comma attr_field)* Comma?
+    => cons_attr_field(first, rest)
+    ;
+
+rule attr_field ::=
+    name:Ident Eq value:attr_arg
+    => (name, value)
+    ;
+
 rule expr ::= pratt {
     prefix (20) {
         Neg e:expr

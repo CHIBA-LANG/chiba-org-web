@@ -280,9 +280,11 @@ tokens :-
     // Atom（:ident，无空格）——必须先于单独的 ":"
     ":" @ident  { Atom(str_slice(s, 1, str_len(s))) }
 
-    // 文件属性 #!  和  item 属性 #[ident]
+    // 文件属性 #![...] 和 attribute 前缀 #[...]
+    // lexer 不解析 attribute 内部嵌套，只产普通 token；
+    // nested/named/list/object attr args 由 chibacc parser 处理。
     "#!"            { HashBang }
-    "#[" @ident "]" {   ItemAttr(str_slice(s, 2, str_len(s) - 1)) }
+    "#"             { Hash }
 
     // 双字符运算符（必须先于对应单字符）
     "=>"  { FatArrow }
