@@ -260,16 +260,22 @@ level-1 使用两个显式 continuation capability type：
 ```chiba
 Cont1[A, B]
 ContN[A, B]
+cont1 (A) -> B
+contN (A) -> B
 ```
 
 其中 `A` 是 resume input type，`B` 是当前 `reset` 的 answer type。
 
 - `Cont1[A, B]` 表示 one-shot continuation。它最多恢复一次。
 - `ContN[A, B]` 表示 multi-shot continuation。它可以重复恢复。
+- `cont1 (A) -> B` 是 `Cont1[A, B]` 的 surface type sugar。
+- `contN (A) -> B` 是 `ContN[A, B]` 的 surface type sugar。
 
 `Cont1` 与 `ContN` 都不是普通 closure。它们携带 answer type、来源 `reset` 边界、arena/world legality 与 usage 信息。它们默认都是 `!send`。
 
 非逃逸、静态 exactly-once 的 `Cont1` 必须由 backend 编译成 direct resume、tail jump 或 inline continuation，不得分配 continuation package。逃逸的 `Cont1` 不得被提升成 multi-shot；它必须 lower 成 boxed one-shot state machine。boxed `Cont1` 第一次 resume 会 consume state，后续 resume 必须产生运行时错误或 trap。
+
+`cont1 (A) -> B` 与 `contN (A) -> B` 可以出现在参数、局部绑定、record/tuple/ADT member 等类型位置。若 `cont1 (A) -> B` 出现在可别名存储位置，lowering 是 boxed one-shot state machine，而不是 erased callable ADT；若 `contN (A) -> B` 出现在存储位置，lowering 是可重复恢复的 continuation package。
 
 `ContN` 的 control frame/spine 必须可重复恢复。`ContN` 可以进入 erased callable storage，但仍然保持 `!send`，并且不得因此丢失 answer type 与 reset boundary 检查。
 
@@ -280,13 +286,19 @@ Level-1 exposes two continuation capability types:
 ```chiba
 Cont1[A, B]
 ContN[A, B]
+cont1 (A) -> B
+contN (A) -> B
 ```
 
 `A` is the resume input type and `B` is the answer type of the surrounding `reset`. `Cont1[A, B]` is a one-shot continuation that may be resumed at most once. `ContN[A, B]` is a multi-shot continuation that may be resumed multiple times.
 
+`cont1 (A) -> B` is surface type sugar for `Cont1[A, B]`. `contN (A) -> B` is surface type sugar for `ContN[A, B]`.
+
 Neither type is an ordinary closure. Both carry answer type, source reset boundary, arena/world legality, and usage information, and both default to `!send`.
 
 A non-escaping, statically exactly-once `Cont1` must compile to a direct resume, tail jump, or inlined continuation without allocating a continuation package. An escaping `Cont1` must not be promoted into a multi-shot continuation; it must lower to a boxed one-shot state machine. The first resume consumes the state, and later resumes must raise a runtime error or trap.
+
+`cont1 (A) -> B` and `contN (A) -> B` may appear in parameter, local binding, record, tuple, and ADT member type positions. When `cont1 (A) -> B` appears in an aliasable storage position, it lowers to a boxed one-shot state machine rather than to an erased callable ADT. When `contN (A) -> B` appears in storage, it lowers to a repeatable continuation package.
 
 The control frame or spine of a `ContN` must be repeatable. `ContN` may enter erased callable storage, but it remains `!send` and must retain answer-type and reset-boundary checks.
 
@@ -310,6 +322,8 @@ Therefore, if a `ContN` resume path reads or writes the same `Ref[T]`, multiple 
 
 在存储位置，`(A) -> B` lower 成 erased callable ADT。该 ADT 至少包含 function、closure、boxed `Cont1[A, B]` 与 `ContN[A, B]` variants。调用该存储值时必须按 variant dispatch；如果 variant 是 boxed `Cont1`，调用会 consume 它，重复调用是运行时错误。
 
+若用户写的是 `cont1 (A) -> B` 或 `contN (A) -> B`，则不是 erased callable storage：前者是 one-shot continuation storage，后者是 multi-shot continuation storage。它们分别 lower 成 boxed `Cont1` state machine 与 `ContN` package。
+
 `((A) -> B) send` 是 sendable callable storage。它的 variant set 必须排除 `Cont1`、boxed `Cont1`、`ContN` 以及任何 `!send` closure。因此，把 continuation 传给 `spawn` 或写入要求 `send` 的 callable storage 必须报错，除非未来显式引入 sendable continuation capability。
 
 ## 15. Callable Arrow Positions
@@ -319,6 +333,8 @@ Therefore, if a `ContN` resume path reads or writes the same `Ref[T]`, multiple 
 In parameter position, `(A) -> B` is a callable-shape obligation and follows the same flexible-inference / checked-template route as `def id(x) = x`. Definition-time checking records obligations such as call count, storage, `send` requirement, and boundary crossing. Instantiation may discharge the parameter as a top-level function, no-capture closure, capturing closure, `Cont1[A, B]`, or `ContN[A, B]`.
 
 In storage position, `(A) -> B` lowers to an erased callable ADT. That ADT must at least include function, closure, boxed `Cont1[A, B]`, and `ContN[A, B]` variants. Calling such a stored value dispatches by variant. If the variant is boxed `Cont1`, the call consumes it and repeated calls are runtime errors.
+
+When the user writes `cont1 (A) -> B` or `contN (A) -> B`, the type is not erased callable storage. The former is one-shot continuation storage and the latter is multi-shot continuation storage. They lower to a boxed `Cont1` state machine and a `ContN` package respectively.
 
 `((A) -> B) send` is sendable callable storage. Its variant set must exclude `Cont1`, boxed `Cont1`, `ContN`, and any `!send` closure. Passing a continuation to `spawn` or writing one into a `send`-requiring callable storage position must therefore be rejected unless a future layer introduces an explicit sendable continuation capability.
 

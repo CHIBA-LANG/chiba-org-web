@@ -20,6 +20,10 @@
 
 ## 必须发生在 CIR 的内容
 
+CIR 是目标无关的语义层。任何依赖 Wasm-GC layout、WAT 指令、Binaryen feature、`funcref` / `eqref` 表示、目标 ABI 或具体 frame header 编码的工作，都不得放在 CIR。
+
+CIR pass 可以产生“需要 closure env”“需要 boxed `Cont1` state machine”“需要 `ContN` package”“需要 erased callable ADT dispatch”这类语言级 obligation；但具体如何变成 Wasm-GC struct、BIR frame、LIR helper 或目标 runtime call，是 BIR/LIR/backend 的职责。
+
 ### 类型检查
 
 typecheck 应发生在 CIR。

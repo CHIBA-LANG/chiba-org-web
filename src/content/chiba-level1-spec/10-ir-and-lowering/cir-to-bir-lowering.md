@@ -45,6 +45,8 @@ lower_cps_to_bir(program: CpsProgram): BirProgram
 
 因此，`CIR -> BIR` 应被理解为默认 native/runtime lowering，而不是强制唯一路径。
 
+CIR 输入必须保持目标无关。CIR 可以携带 continuation kind、callable storage kind、closure capture set、usage、send 与 arena 事实，但不得携带 Wasm-GC layout id、`funcref` / `eqref` 字段、WAT opcode、Binaryen flag 或目标 ABI 细节。CIR → BIR 是这些语言级事实第一次被 materialize 成抽象机 frame、block、runtime package 或后端可消费结构的边界。
+
 ## 这一步负责什么
 
 进入这一步之前，以下工作原则上已经在 CIR 完成：
