@@ -191,7 +191,7 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 - [x] inline `asm`
 - [-] asm 输入/输出 tuple 语义
 - [x] pipe `|>`
-	- 支持单个 `_` 作为孔位
+	- 支持一个或多个 `_` 作为孔位；每个 `_` 都替换为当前 pipe 左侧值
 	- 倒数第三弱优先级
 - [x] method call surface syntax
 - [ ] `dyn Constraint` / `dyn {r | ...}` dynamic package surface
@@ -344,4 +344,3 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 - [ ] `via ns.path` 作为显式实现来源选择
 - [ ] named constraint 的 local HM 翻译
 - [ ] `dyn Constraint` / `dyn {r | ...}` 与 adapter-carrying dynamic package
-
