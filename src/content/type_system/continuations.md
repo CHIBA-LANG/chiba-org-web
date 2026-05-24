@@ -29,13 +29,13 @@ level-1 至少要求：
 - answer type checking
 - continuation 与 arena / escape 边界的关系
 
-此外，continuation 默认属于受限控制能力，而不是可自由泛化、可自由发送、可自由存储的普通值。
+此外，continuation 默认属于受限控制能力，而不是可自由发送的普通值。它可以参与 callable 泛化与显式存储规则，但必须保留 continuation kind、answer type、usage 与边界信息，不能被洗成普通 closure。
 
 ## 1. Basic Rules
 
 Because level-1 already contains `reset` and `shift`, continuation-related checking must also be solved at level-1 rather than postponed to level-2.
 
-At minimum, level-1 needs typing rules for `reset` and `shift`, context constraints for capturing continuations, answer type checking, and rules describing how continuations interact with arena and escape boundaries. Continuations should be treated as restricted control capabilities, not as ordinary values that can be generalized, sent, or stored without limits.
+At minimum, level-1 needs typing rules for `reset` and `shift`, context constraints for capturing continuations, answer type checking, and rules describing how continuations interact with arena and escape boundaries. Continuations should be treated as restricted control capabilities, not as ordinary closures. They may participate in callable generalization and explicit storage rules, but their continuation kind, answer type, usage, and boundary information must remain visible to the checker and lowering pipeline.
 
 ## 2. Answer Type
 
@@ -253,7 +253,98 @@ To keep continuation rules from turning level-1 into a heavy global solver, answ
 
 Specialization or callable lowering for continuations must not destroy this locality.
 
-## 13. 非目标
+## 13. Surface Continuation Types
+
+level-1 使用两个显式 continuation capability type：
+
+```chiba
+Cont1[A, B]
+ContN[A, B]
+```
+
+其中 `A` 是 resume input type，`B` 是当前 `reset` 的 answer type。
+
+- `Cont1[A, B]` 表示 one-shot continuation。它最多恢复一次。
+- `ContN[A, B]` 表示 multi-shot continuation。它可以重复恢复。
+
+`Cont1` 与 `ContN` 都不是普通 closure。它们携带 answer type、来源 `reset` 边界、arena/world legality 与 usage 信息。它们默认都是 `!send`。
+
+非逃逸、静态 exactly-once 的 `Cont1` 必须由 backend 编译成 direct resume、tail jump 或 inline continuation，不得分配 continuation package。逃逸的 `Cont1` 不得被提升成 multi-shot；它必须 lower 成 boxed one-shot state machine。boxed `Cont1` 第一次 resume 会 consume state，后续 resume 必须产生运行时错误或 trap。
+
+`ContN` 的 control frame/spine 必须可重复恢复。`ContN` 可以进入 erased callable storage，但仍然保持 `!send`，并且不得因此丢失 answer type 与 reset boundary 检查。
+
+## 13. Surface Continuation Types
+
+Level-1 exposes two continuation capability types:
+
+```chiba
+Cont1[A, B]
+ContN[A, B]
+```
+
+`A` is the resume input type and `B` is the answer type of the surrounding `reset`. `Cont1[A, B]` is a one-shot continuation that may be resumed at most once. `ContN[A, B]` is a multi-shot continuation that may be resumed multiple times.
+
+Neither type is an ordinary closure. Both carry answer type, source reset boundary, arena/world legality, and usage information, and both default to `!send`.
+
+A non-escaping, statically exactly-once `Cont1` must compile to a direct resume, tail jump, or inlined continuation without allocating a continuation package. An escaping `Cont1` must not be promoted into a multi-shot continuation; it must lower to a boxed one-shot state machine. The first resume consumes the state, and later resumes must raise a runtime error or trap.
+
+The control frame or spine of a `ContN` must be repeatable. `ContN` may enter erased callable storage, but it remains `!send` and must retain answer-type and reset-boundary checks.
+
+## 14. `Ref[T]` Capture and Shared-Reference Semantics
+
+`Ref[T]` 是 level-1 的 safe mutation surface。continuation 捕获 `Ref[T]` 时采用 shared-reference 语义：continuation frame/control spine 可以被恢复一次或多次，但捕获到的 `Ref[T]` cell 不会被 snapshot、copy 或 rollback。
+
+因此，若 `ContN` 的恢复路径读写同一个 `Ref[T]`，多次 resume 会按普通共享 cell 语义累积副作用。`UnsafeRef[T]` 与其他 unsafe handle 的并发和别名安全由 unsafe 协议承担；continuation 本身仍默认 `!send`。
+
+## 14. `Ref[T]` Capture and Shared-Reference Semantics
+
+`Ref[T]` is the safe mutation surface in level-1. When a continuation captures a `Ref[T]`, it uses shared-reference semantics: the continuation frame or control spine may be resumed once or multiple times, but the captured `Ref[T]` cell is not snapshotted, copied, or rolled back.
+
+Therefore, if a `ContN` resume path reads or writes the same `Ref[T]`, multiple resumes accumulate effects through the ordinary shared cell. Concurrency and aliasing safety for `UnsafeRef[T]` and other unsafe handles belong to the unsafe protocol; the continuation itself still defaults to `!send`.
+
+## 15. Callable Arrow Positions
+
+`(A) -> B` 在不同语义位置有不同 lowering contract。
+
+在参数位置，`(A) -> B` 表示 callable shape obligation，并按 `def id(x) = x` 同类的 flexible inference / checked-template 路线处理。定义期记录调用次数、是否存储、是否要求 `send`、是否跨 boundary 等 obligation；实例化期可以兑现为 top-level function、no-capture closure、capturing closure、`Cont1[A, B]` 或 `ContN[A, B]`。
+
+在存储位置，`(A) -> B` lower 成 erased callable ADT。该 ADT 至少包含 function、closure、boxed `Cont1[A, B]` 与 `ContN[A, B]` variants。调用该存储值时必须按 variant dispatch；如果 variant 是 boxed `Cont1`，调用会 consume 它，重复调用是运行时错误。
+
+`((A) -> B) send` 是 sendable callable storage。它的 variant set 必须排除 `Cont1`、boxed `Cont1`、`ContN` 以及任何 `!send` closure。因此，把 continuation 传给 `spawn` 或写入要求 `send` 的 callable storage 必须报错，除非未来显式引入 sendable continuation capability。
+
+## 15. Callable Arrow Positions
+
+`(A) -> B` has different lowering contracts in different semantic positions.
+
+In parameter position, `(A) -> B` is a callable-shape obligation and follows the same flexible-inference / checked-template route as `def id(x) = x`. Definition-time checking records obligations such as call count, storage, `send` requirement, and boundary crossing. Instantiation may discharge the parameter as a top-level function, no-capture closure, capturing closure, `Cont1[A, B]`, or `ContN[A, B]`.
+
+In storage position, `(A) -> B` lowers to an erased callable ADT. That ADT must at least include function, closure, boxed `Cont1[A, B]`, and `ContN[A, B]` variants. Calling such a stored value dispatches by variant. If the variant is boxed `Cont1`, the call consumes it and repeated calls are runtime errors.
+
+`((A) -> B) send` is sendable callable storage. Its variant set must exclude `Cont1`, boxed `Cont1`, `ContN`, and any `!send` closure. Passing a continuation to `spawn` or writing one into a `send`-requiring callable storage position must therefore be rejected unless a future layer introduces an explicit sendable continuation capability.
+
+## 16. Required Backend Optimizations
+
+level-1b backend 不能把 continuation / closure 的核心优化留成可选项：
+
+- `UseZero` continuation 必须删除。
+- 非逃逸 `UseOne` / `Cont1` continuation 必须 direct/inline/tail-resume，不得分配 continuation package。
+- 逃逸 `Cont1` 必须 boxed 成 one-shot consumed-state machine，不得当作 `ContN`。
+- `UseMany` / `ContN` 才 materialize multi-shot continuation package。
+- 无 capture closure 必须 direct function / funcref / inline，不得分配 closure env。
+- capture closure 只有在确实需要 env 时才分配 env；若静态已知 erased callable ADT 的 variant，dispatch 应被优化掉。
+
+## 16. Required Backend Optimizations
+
+The level-1b backend must not treat the core continuation and closure optimizations as optional:
+
+- `UseZero` continuations must be deleted.
+- Non-escaping `UseOne` / `Cont1` continuations must lower to direct, inlined, or tail-resume paths without allocating a continuation package.
+- Escaping `Cont1` continuations must lower to boxed one-shot consumed-state machines, not to `ContN`.
+- Only `UseMany` / `ContN` continuations materialize multi-shot continuation packages.
+- Capture-free closures must lower to direct functions, funcrefs, or inlined code without allocating closure environments.
+- Capturing closures allocate environments only when an environment is actually needed; statically known erased-callable variants should have dispatch optimized away.
+
+## 17. 非目标
 
 下列内容不是本文当前目标：
 
@@ -262,21 +353,23 @@ Specialization or callable lowering for continuations must not destroy this loca
 - interface-aware continuation constraints
 - 高阶 effect system
 - 全面的 continuation subtyping
+- sendable continuation capability
+- snapshot / rollback semantics for captured `Ref[T]`
 
-## 13. Non-Goals
+## 17. Non-Goals
 
-This document is not currently trying to provide answer type polymorphism, free continuation generalization, interface-aware continuation constraints, a high-order effect system, or full continuation subtyping.
+This document is not currently trying to provide answer type polymorphism, free continuation generalization, interface-aware continuation constraints, a high-order effect system, full continuation subtyping, sendable continuation capabilities, or snapshot / rollback semantics for captured `Ref[T]`.
 
-## 14. 开放问题
+## 18. 开放问题
 
-- continuation 是否需要 surface-level type syntax
-- continuation 是否允许被显式存入普通数据结构
 - generic continuation 的泛化限制最终采用多严格的规则
 - continuation 与 method / shaped dispatch 交互的缓存 key 如何建模
+- boxed `Cont1` 的重复 resume 诊断应固定为 panic、trap 还是可捕获 runtime error
+- erased callable ADT 的具体 ABI 与优化 manifest 如何展示
 
-## 14. Open Questions
+## 18. Open Questions
 
-- Does continuation need a surface-level type syntax?
-- May a continuation be explicitly stored inside ordinary data structures?
 - How strict should the final generalization restriction be for generic continuations?
 - How should caching keys be modeled for interactions between continuations and method or shaped dispatch?
+- Should repeated resume of boxed `Cont1` be specified as panic, trap, or catchable runtime error?
+- How should the concrete ABI and optimization manifest for erased callable ADTs be displayed?
