@@ -22,12 +22,12 @@ level-1 的方法系统需要同时满足：
 - 支持 `def Type.method(...)`
 - 支持 operator overloading
 - 支持 shape-based dispatch
-- 与 structural generics 协作
+- 与 checked structural templates 协作
 - 保持较快的候选筛选与缓存
 
 ## 1. Design Requirements
 
-The level-1 method system must support method surface syntax, `def Type.method(...)`, operator overloading, shape-based dispatch, and cooperation with structural generics while still keeping candidate filtering and caching fast.
+The level-1 method system must support method surface syntax, `def Type.method(...)`, operator overloading, shape-based dispatch, and cooperation with checked structural templates while still keeping candidate filtering and caching fast.
 
 ## 2. 基本规则
 
@@ -111,7 +111,7 @@ v.m(a, b)
 
 第 3 层不做 receiver 注入；`a.b` 是整体名字。
 
-row 约束不能证明 nominal method 存在。若定义期只知道 `a` 满足 `{r | b: ty}`，那么这个事实只说明字段 `b` 存在；它可以支持 `a.b` 的 field access，也可以在 `ty` 是函数类型时支持 `(a.b)(c)` 的 field-callable 路线，但不能因此选择 `def X.b(self, ...)`。receiver method 必须依赖 concrete nominal receiver，或在 generic body 中生成 method obligation，等实例化出 concrete nominal type 后再兑现。
+row 约束不能证明 nominal method 存在。若定义期只知道 `a` 满足 `{r | b: ty}`，那么这个事实只说明字段 `b` 存在；它可以支持 `a.b` 的 field access，也可以在 `ty` 是函数类型时支持 `(a.b)(c)` 的 field-callable 路线，但不能因此选择 `def X.b(self, ...)`。receiver method 必须依赖 concrete nominal receiver，或在 checked-template body 中生成 method obligation，等实例化出 concrete nominal type 后再兑现。
 
 若 row-shaped value 需要进入 nominal method world，必须先通过显式 cast / checked conversion 得到 concrete nominal type。没有这个转换时，row fact 不参与 receiver method resolution。
 
@@ -123,7 +123,7 @@ The result is not decided by interface satisfaction. It is decided by nominal id
 
 For `a.b(c)`, callee resolution is layered: if `a` is a value expression with field `b`, the call is `(a.b)(c)`; otherwise, if `typeof(a)` has nominal method `b`, the call lowers to `TypeOf(a).b(a, c)`; otherwise, if `a` is a type or namespace path and `a.b` resolves as a callable item, the call is `(a.b)(c)`. The qualified-callee case does not evaluate `a` and does not inject a receiver.
 
-A row constraint does not prove that a nominal method exists. If definition-time checking only knows that `a` satisfies `{r | b: ty}`, that fact proves field availability only. It may support `a.b` as field access, and it may support `a.b(c)` through the field-callable path when `ty` is a function type, but it must not select `def X.b(self, ...)`. Receiver-method resolution requires a concrete nominal receiver, or a method obligation in a generic body that is discharged after instantiation produces a concrete nominal type.
+A row constraint does not prove that a nominal method exists. If definition-time checking only knows that `a` satisfies `{r | b: ty}`, that fact proves field availability only. It may support `a.b` as field access, and it may support `a.b(c)` through the field-callable path when `ty` is a function type, but it must not select `def X.b(self, ...)`. Receiver-method resolution requires a concrete nominal receiver, or a method obligation in a checked-template body that is discharged after instantiation produces a concrete nominal type.
 
 If a row-shaped value needs to enter the nominal method world, it must first go through an explicit cast or checked conversion to a concrete nominal type. Without that conversion, row facts do not participate in receiver-method resolution.
 
@@ -147,7 +147,7 @@ method index key 是 `(nominal_id(X), "y")`，可调用形状是 `(Self, A) => R
 generic owner 的方法中，`Self` 带上 owner 的类型参数：
 
 ```chiba
-type Box[T] { value: T }
+type Box[T] = { value: T }
 def Box[T].get(self): T = self.value
 ```
 
@@ -159,7 +159,7 @@ def Box[T].get(self): T = self.value
 
 A method-style definition such as `def X.y(self, arg: A): R = ...` binds `self` to the owner nominal type. Inside the method body, the checker introduces a receiver-scope alias `Self := X`, so `self : Self`. The method index key is `(nominal_id(X), "y")`, and the callable shape is `(Self, A) => R`.
 
-For a generic owner, `Self` includes the owner's type arguments. In `type Box[T] { value: T }` plus `def Box[T].get(self): T = self.value`, the method scope has `Self := Box[T]`, so `self : Box[T]` and `self.value : T`.
+For a checked-template owner, `Self` includes the owner's type arguments. In `type Box[T] = { value: T }` plus `def Box[T].get(self): T = self.value`, the method scope has `Self := Box[T]`, so `self : Box[T]` and `self.value : T`.
 
 `Self` is not an ordinary top-level type name, not row erasure, and not a generic parameter that can be freely referenced outside a method receiver scope.
 
@@ -219,9 +219,9 @@ To keep compile time under control, candidate filtering must be layered: first f
 
 The implementation may rely on nominal method indexes, fast nominal-type filters, and method-resolution caches.
 
-## 8. 与 Generics 的关系
+## 8. 与 Checked Templates 的关系
 
-generic body 中的 method call 常常不能在定义期完全决议。
+checked-template body 中的 method call 常常不能在定义期完全决议。
 
 因此本文采用：
 
@@ -230,9 +230,9 @@ generic body 中的 method call 常常不能在定义期完全决议。
 
 这也是 level-1 保持编译速度的关键手段之一。
 
-## 8. Relation to Generics
+## 8. Relation to Checked Templates
 
-Method calls inside generic bodies often cannot be fully resolved at definition time.
+Method calls inside checked-template bodies often cannot be fully resolved at definition time.
 
 The correct model is to generate method obligations during definition-time checking and finish the final resolution over concrete shapes during instantiation. That is one of the main reasons level-1 can stay fast.
 

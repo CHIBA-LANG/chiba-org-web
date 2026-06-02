@@ -36,7 +36,7 @@ Vec[TokenItem]
 其中 `TokenItem` 延续前文约定：
 
 ```chiba
-data TokenItem {
+data TokenItem = {
     TokenSpan(Token, Span)
     ErrorSpan(Error, Span)
 }
@@ -58,7 +58,7 @@ ChibaCC 不要求用户为每个层级额外手写 `Item_Error` / `Stmt_Error` /
 生成器会把整次 `start` 规则的解析结果统一包成 `LabeledAST`：
 
 ```chiba
-data LabeledAST {
+data LabeledAST = {
     OK(AST, Vec[TokenItem])
     Err(Option[AST], Vec[TokenItem])
 }
@@ -80,7 +80,7 @@ LabeledAST
 也就是说，若用户把整份文件建模成一个顶层 AST，例如：
 
 ```chiba
-data AST {
+data AST = {
     Programme(Vec[AST])
     // ...
 }
@@ -361,7 +361,7 @@ ChibaCC 不再默认要求用户 AST 自己提供 `Item_Error` / `Stmt_Error` / 
 例如：
 
 ```chibacc
-data LabeledAST {
+data LabeledAST = {
   OK(AST, Vec[TokenItem])
   Err(Option[AST], Vec[TokenItem])
 }
@@ -591,7 +591,7 @@ rule expr ::= pratt {
 
 {
     // 尾部 Chiba 代码：用户 AST / 错误节点定义等
-    data AST {
+    data AST = {
         Something(Something, AST)
     }
 }

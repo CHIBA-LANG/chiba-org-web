@@ -19,7 +19,7 @@ attribute argument 至少支持：
 
 ```chiba
 #[repr("C")]
-type Header {
+type Header = {
 	#[cname(field="_")]
 	field: i32,
 }
@@ -76,7 +76,7 @@ unknown predicate、unknown key、参数数量错误或非 string 的 key value 
 attribute parser 必须输出结构化 AST，不能把 `#[...]` 内部保持为字符串。
 
 ```chiba
-data AttrArg {
+data AttrArg = {
     AttrBare(Ident)                 // `someident`; 等价于 named bool true
     AttrString(String)
     AttrInt(i64)
@@ -87,7 +87,7 @@ data AttrArg {
     AttrObject(Vec[(Ident, AttrArg)])
 }
 
-data Attribute {
+data Attribute = {
     Attribute(path: Vec[Ident], args: Vec[AttrArg], file_level: bool)
 }
 ```

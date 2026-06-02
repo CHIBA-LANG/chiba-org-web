@@ -17,7 +17,7 @@ level-1 的 managed object model 以 arena、escape legality、promotion、RC �
 ## Usage
 
 ```chiba
-data Pair {
+data Pair = {
 	x: i32,
 	y: i32,
 }

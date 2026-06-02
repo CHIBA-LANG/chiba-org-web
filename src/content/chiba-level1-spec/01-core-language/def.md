@@ -12,7 +12,7 @@
 
 普通 `def` 与 method-style `def Type.method(...)` 共享同一套函数定义基底；差异只在 receiver 关联与 method resolution。
 
-## 参数类型推断与自动泛化
+## 参数类型推断与 Checked Template 自动泛化
 
 普通非 `extern` 函数允许省略参数与返回值类型。
 
@@ -20,7 +20,7 @@
 def f(a, b, c) = expr
 ```
 
-`a`、`b`、`c` 会先获得 fresh inference variable。函数体的使用点负责收集约束：具体类型需求按普通 unify 处理；字段访问、method call、operator、shape dispatch 等需求生成 structural obligation。函数体检查完成后，仍未具体化的自由变量与其 obligation 在函数边界自动泛化为隐式 generic 参数。
+`a`、`b`、`c` 会先获得 fresh inference variable。函数体的使用点负责收集约束：具体类型需求按普通 unify 处理；字段访问、method call、operator、shape dispatch 等需求生成 structural obligation。函数体检查完成后，仍未具体化的自由变量与其 obligation 在函数边界自动泛化为隐式 checked template 参数。
 
 函数参数本体是 pattern，而不是单独的“参数名语法”。`def f(a)` 中的 `a` 是 identifier pattern；`def f(_)` 中的 `_` 是 wildcard pattern；`def f(Some(x): Option[X])` 中的 `Some(x)` 是 constructor pattern，后面的 `: Option[X]` 标注整个参数 value 的类型。
 
@@ -68,9 +68,9 @@ def get_name(x) = x.name
 def get_name[T: {r | name: a}](x: T): a = x.name
 ```
 
-这不是旧 C++ 模板式“定义期不检查”。函数体仍必须在抽象参数与已收集 obligation 下通过定义期类型检查。
+这不是 Rust generics，也不是旧 C++ 模板式“定义期不检查”。函数体仍必须在抽象参数与已收集 obligation 下通过定义期类型检查；实例化期只兑现记录下来的 shape / method / operator / capability obligation，并 monomorphize。
 
-显式 `[T]` 是定义期 HM 环境中的类型变量 binder，但函数体检查时它是 rigid abstract type，不是可被函数体随意解成 concrete type 的 inference hole。
+显式 `[T]` 是 checked template 的定义期 HM 类型变量 binder，但函数体检查时它是 rigid abstract type，不是可被函数体随意解成 concrete type 的 inference hole。
 
 因此：
 
@@ -91,7 +91,7 @@ def map_one[T, F](value: T, convert: (T) => F): F = convert(value)
 
 ## Row 参数简写
 
-函数参数上的 row 标注是 row-bound generic 参数的简写。
+函数参数上的 row 标注是 row-bound checked template 参数的简写。
 
 ```chiba
 def f(a: {r | name: Str}) = a.name
@@ -103,7 +103,7 @@ def f(a: {r | name: Str}) = a.name
 def f[T: {r | name: Str}](a: T) = a.name
 ```
 
-该 row 约束是 open-row shape obligation，不是 closed record type，也不会抹掉 concrete nominal identity。多个参数分别使用 row 简写时，默认各自引入 fresh synthetic generic；只有显式复用同一个命名类型变量时才表示它们必须是同一个类型参数。
+该 row 约束是 open-row shape obligation，不是 closed record type，也不会抹掉 concrete nominal identity。多个参数分别使用 row 简写时，默认各自引入 fresh synthetic template parameter；只有显式复用同一个命名类型变量时才表示它们必须是同一个类型参数。
 
 # Method-Style `def Type.method(...)`
 
@@ -131,7 +131,7 @@ self : Self
 若 owner 带 generic 参数，例如：
 
 ```chiba
-type Box[T] { value: T }
+type Box[T] = { value: T }
 
 def Box[T].get(self): T = self.value
 ```
@@ -143,7 +143,7 @@ method-style `def` 是 level-1 的正式能力。
 ## Usage
 
 ```chiba
-data Vec2 {
+data Vec2 = {
 	x: f32,
 	y: f32,
 }

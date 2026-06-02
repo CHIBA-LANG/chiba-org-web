@@ -16,6 +16,7 @@
 - `match`
 - `for`
 - `reset`
+- `resetn`
 - `shift`
 - `private`
 - `unsafe`
@@ -30,4 +31,3 @@
 关键字在关键字位置不能被当作普通标识符使用。
 
 关键字集合决定 parser 的起始分支与某些歧义消解策略。
-

@@ -59,8 +59,8 @@ The core concern of `send` and `!send` is world-boundary legality, storage legal
 例如：
 
 ```chiba
-type Job ((Msg) => Unit) send
-type LocalJob ((Msg) => Unit) !send
+type Job = ((Msg) => Unit) send
+type LocalJob = ((Msg) => Unit) !send
 ```
 
 该 qualifier 修饰的是整个类型表达式，而不是其中某个局部节点。
@@ -220,7 +220,7 @@ continuation 默认是 `!send`。
 
 continuation 天然携带 control boundary、answer type 与 arena legality，因此不应默认跨 world 传递。
 
-`Cont1[A, B]` / `cont1 (A) -> B` 与 `ContN[A, B]` / `contN (A) -> B` 都默认 `!send`。`Cont1` 若进入 `(A) -> B` storage，会 boxed 成 one-shot consumed-state machine；这个 boxed form 仍然是 `!send`。显式 `cont1 (A) -> B` storage 也 lower 成 boxed one-shot state machine。`ContN` 可以进入普通 erased callable storage；显式 `contN (A) -> B` storage lower 成 multi-shot continuation package。二者仍然都是 `!send`。
+`Cont1[A, B]` / `cont1 (A) -> B` 与 `ContN[A, B]` / `contN (A) -> B` 都默认 `!send`。`Cont1` 来自 `reset` 边界内的 `shift`，usage color 为 `1`；`ContN` 来自 `resetn` 边界内的 `shift`，usage color 为 `N`。`Cont1` 若进入 `(A) -> B` storage，会 boxed 成 one-shot consumed-state machine；这个 boxed form 仍然是 `!send`。显式 `cont1 (A) -> B` storage 也 lower 成 boxed one-shot state machine。`ContN` 可以进入普通 erased callable storage；显式 `contN (A) -> B` storage lower 成 multi-shot continuation package。二者仍然都是 `!send`。
 
 `((A) -> B) send` 表示 sendable callable storage。它的 erased callable ADT variant set 必须排除 `Cont1`、boxed `Cont1`、`ContN` 与任何 `!send` closure。
 
@@ -238,7 +238,7 @@ closure 是否为 `send` 取决于 capture 环境：
 
 Builtin scalar values are `send` by default. Tuples, records, ADTs, and immutable arrays are classified recursively from their members: all-`send` members make the whole value `send`, while any `!send` member makes the whole value `!send`.
 
-`Array[T]` has no safe internal mutability in level-1, so `Array[T]` is `send` exactly when `T` is `send`. `Ref[T]` is `!send` by default because it is a single-world safe aliasing and mutation tool; therefore both `Ref[Array[T]]` and `Array[Ref[T]]` are `!send`. A top-level `Ref[T]` must be explicitly marked `#[world_local]`; it denotes one cell per world and remains `!send`. Cross-world shared mutable state should use Atomic, or `UnsafeRef[T]` at an unsafe boundary. Atomic capability types are `send`, but their mutation may only happen through atomic APIs; the first level-1 version may restrict `Atomic[T]` to scalar, boolean, usize, and pointer-like types and expose Rust-style ordering parameters. `Ptr[T]` is `send` by default because its danger belongs to `unsafe`, not to `send`. `UnsafeRef[T]` is also `send` by default because it models a cross-world unsafe handle with liveness semantics, similar to an Arc-like shared-owned box. Continuations are `!send` by default because they carry control boundaries, answer types, and arena legality. Both `Cont1[A, B]` / `cont1 (A) -> B` and `ContN[A, B]` / `contN (A) -> B` are `!send`; boxing an escaping `Cont1` as a one-shot state machine does not make it sendable. Closures depend on their capture environment: capture-free closures are `send`, but any captured `!send` member makes the closure `!send`; moving a captured value does not wash a `!send` value into `send`. A top-level `def` has no closure environment, so it is `send` by default.
+`Array[T]` has no safe internal mutability in level-1, so `Array[T]` is `send` exactly when `T` is `send`. `Ref[T]` is `!send` by default because it is a single-world safe aliasing and mutation tool; therefore both `Ref[Array[T]]` and `Array[Ref[T]]` are `!send`. A top-level `Ref[T]` must be explicitly marked `#[world_local]`; it denotes one cell per world and remains `!send`. Cross-world shared mutable state should use Atomic, or `UnsafeRef[T]` at an unsafe boundary. Atomic capability types are `send`, but their mutation may only happen through atomic APIs; the first level-1 version may restrict `Atomic[T]` to scalar, boolean, usize, and pointer-like types and expose Rust-style ordering parameters. `Ptr[T]` is `send` by default because its danger belongs to `unsafe`, not to `send`. `UnsafeRef[T]` is also `send` by default because it models a cross-world unsafe handle with liveness semantics, similar to an Arc-like shared-owned box. Continuations are `!send` by default because they carry control boundaries, answer types, arena legality, and usage color. `Cont1[A, B]` / `cont1 (A) -> B` comes from `shift` under `reset` and has usage color `1`; `ContN[A, B]` / `contN (A) -> B` comes from `shift` under `resetn` and has usage color `N`. Both are `!send`; boxing an escaping `Cont1` as a one-shot state machine does not make it sendable. Closures depend on their capture environment: capture-free closures are `send`, but any captured `!send` member makes the closure `!send`; moving a captured value does not wash a `!send` value into `send`. A top-level `def` has no closure environment, so it is `send` by default.
 
 ## 5. 与函数检查的关系
 
@@ -249,15 +249,15 @@ Builtin scalar values are `send` by default. Tuples, records, ADTs, and immutabl
 - `def f(...): R send` 描述的是 `f` 这个值可以跨 world 搬运
 - 它不描述 `f(...)` 这个调用表达式会发生什么控制或副作用
 
-这一区分必须保持清晰，否则 `send` 会与 future effect system、`reset` / `shift`、IO 语义混层。
+这一区分必须保持清晰，否则 `send` 会与 future effect system、`reset` / `resetn` / `shift`、IO 语义混层。
 
 ## 5. Relation to Function Checking
 
 `send` is a property of the callable value, not a function effect.
 
-So `def f(...): R send` describes the mobility of the function value `f` itself, not the control behavior or side effects of `f(...)`. This distinction must stay sharp, otherwise `send` will get mixed together with a future effect system, `reset` and `shift`, or IO semantics.
+So `def f(...): R send` describes the mobility of the function value `f` itself, not the control behavior or side effects of `f(...)`. This distinction must stay sharp, otherwise `send` will get mixed together with a future effect system, `reset` / `resetn` / `shift`, or IO semantics.
 
-## 6. 与泛型系统的关系
+## 6. 与 Checked Template 系统的关系
 
 `[T: send]` 表示 `T` 必须满足 builtin capability `send`。
 
@@ -279,7 +279,7 @@ BuiltinReq(send, T)
 Send@T
 ```
 
-## 6. Relation to the Generic System
+## 6. Relation to the Checked Template System
 
 `[T: send]` means that `T` must satisfy the builtin capability `send`.
 
@@ -300,7 +300,7 @@ It is not equivalent to an ordinary interface constraint, a named bundle obligat
 
 显式 `!send` 允许覆盖结构递归推导结果。
 
-存储位置的 `(A) -> B` lower 成 erased callable ADT，至少包含 function、closure、boxed `Cont1[A, B]` 与 `ContN[A, B]` variants。因为该 ADT 可能包含 continuation variant，未标注的 callable storage 不能自动视为 `send`。显式 `cont1 (A) -> B` 与 `contN (A) -> B` storage 分别是 one-shot / multi-shot continuation storage，不走 erased callable ADT，但同样默认 `!send`。
+存储位置的 `(A) -> B` lower 成 erased callable ADT，至少包含 function、closure、boxed `Cont1[A, B]` 与 `ContN[A, B]` variants。因为该 ADT 可能包含 continuation variant，未标注的 callable storage 不能自动视为 `send`。显式 `cont1 (A) -> B` 与 `contN (A) -> B` storage 分别是 one-shot / multi-shot continuation storage，不走 erased callable ADT，但同样默认 `!send`。二者的来源仍由 capture delimiter 决定：`reset` + `shift` 产生 `Cont1`，`resetn` + `shift` 产生 `ContN`。
 
 若写成 `((A) -> B) send`，则表示 sendable callable storage。该 storage 只能接受 sendable function / closure variants；`Cont1`、boxed `Cont1`、`ContN` 与 capture `Ref[T]` 等 `!send` 成员的 closure 都必须被拒绝。
 
@@ -310,7 +310,7 @@ It is not equivalent to an ordinary interface constraint, a named bundle obligat
 
 That makes it possible to express both that a storage position requires cross-world mobility and that an entire nominal type is intentionally locked to `!send`. An explicit `!send` is allowed to override the result inferred from structural recursion.
 
-In storage position, `(A) -> B` lowers to an erased callable ADT with at least function, closure, boxed `Cont1[A, B]`, and `ContN[A, B]` variants. Because that ADT may contain continuation variants, an unqualified callable storage type must not be assumed to be `send`. Explicit `cont1 (A) -> B` and `contN (A) -> B` storage positions are one-shot and multi-shot continuation storage respectively rather than erased callable ADTs, but they also default to `!send`.
+In storage position, `(A) -> B` lowers to an erased callable ADT with at least function, closure, boxed `Cont1[A, B]`, and `ContN[A, B]` variants. Because that ADT may contain continuation variants, an unqualified callable storage type must not be assumed to be `send`. Explicit `cont1 (A) -> B` and `contN (A) -> B` storage positions are one-shot and multi-shot continuation storage respectively rather than erased callable ADTs, but they also default to `!send`. Their source remains delimiter-driven: `reset` + `shift` produces `Cont1`, while `resetn` + `shift` produces `ContN`.
 
 When written as `((A) -> B) send`, the storage position is sendable callable storage. It may only accept sendable function or closure variants; `Cont1`, boxed `Cont1`, `ContN`, and closures that capture `!send` members such as `Ref[T]` must be rejected.
 

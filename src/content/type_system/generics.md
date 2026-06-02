@@ -1,38 +1,42 @@
-# Chiba Level 1 Generics Spec
+# Chiba Level 1 Checked Template Spec
 
 ## 0. 范围
 
-本文规定 Chiba level-1 generics 的检查边界、实例化策略与编译速度约束。
+本文规定 Chiba level-1 checked template 的检查边界、实例化策略与编译速度约束。
 
 本文只讨论 level-1。
 
 level-1 没有传统 interface / trait solver。
 
-本文中的 generics 采用统一约束形式：
+源码中的 `[T]`、省略类型后自动泛化出的参数、以及用户写出的“鸭子类型”形状，统一进入 checked template 系统。本文可以为了兼容旧术语继续提到 generics，但语义上它不是 Rust generics，也不是旧 C++ 未检查模板；它是定义期检查一次、实例化期兑现 obligation、最终 monomorphize 的 checked structural template。
+
+本文中的 template constraint 采用统一约束形式：
 
 - N 个 namespace-scoped named constraints
 - 最多 1 个 row constraint
 
 ## 0. Scope
 
-This document defines the checking boundary, instantiation strategy, and compile-time constraints for Chiba level-1 generics.
+This document defines the checking boundary, instantiation strategy, and compile-time constraints for Chiba level-1 checked templates.
 
 It only discusses level-1.
 
-Because level-1 has no traditional interface system, generics here use a unified constrained-template form: N namespace-scoped named constraints plus at most one row constraint.
+Source-level `[T]`, automatically generalized omitted types, and user-facing duck-shaped syntax all elaborate into the checked template system. This document may still mention generics for compatibility with older wording, but semantically this is not Rust generics and not old unchecked C++ templates. It is a checked structural template system: check once at definition time, discharge obligations at instantiation time, and monomorphize.
+
+Because level-1 has no traditional interface system, templates here use a unified constrained-template form: N namespace-scoped named constraints plus at most one row constraint.
 
 ## 1. 总体方向
 
 为了兼顾：
 
 - row polymorphism
-- structural generics
+- structural templates
 - method
 - operator overloading
 - shape-based dispatch
 - 编译速度
 
-level-1 generics 更接近“typed structural templates”。
+level-1 的 `[T]` / auto-generalization 更接近 checked structural templates。
 
 这意味着：
 
@@ -40,16 +44,17 @@ level-1 generics 更接近“typed structural templates”。
 - 它也不是 Rust 风格的重型全局约束求解系统
 - 它需要在定义期做一轮真实的类型检查
 - 它需要在实例化期兑现 concrete shape 相关的 structural obligation
+- 它最终通过 monomorphize 生成 concrete specialization
 
 ## 1. Overall Direction
 
-To balance row polymorphism, structural generics, methods, operator overloading, shape-based dispatch, and compile speed, level-1 generics should behave more like typed structural templates.
+To balance row polymorphism, structural templates, methods, operator overloading, shape-based dispatch, and compile speed, level-1 `[T]` / auto-generalization should behave as checked structural templates.
 
-That means they are neither fully untyped old-style templates nor Rust-style heavy global constraint solvers. They must be checked once at definition time and must discharge concrete shape obligations during instantiation.
+That means they are neither fully untyped old-style templates nor Rust-style heavy global constraint solvers. They must be checked once at definition time, must discharge concrete shape obligations during instantiation, and must eventually monomorphize into concrete specializations.
 
-## 2. Level-1 Generic 的边界
+## 2. Level-1 Checked Template 的边界
 
-level-1 generic 可以依赖：
+level-1 checked template 可以依赖：
 
 - 普通 HM 推断
 - row / shape 约束
@@ -59,7 +64,7 @@ level-1 generic 可以依赖：
 - shaped dispatch obligation
 - answer type checking
 
-level-1 generic 不能依赖：
+level-1 checked template 不能依赖：
 
 - 传统 interface witness search
 - 全局 named capability solver
@@ -67,19 +72,19 @@ level-1 generic 不能依赖：
 
 named constraint 只负责命名与复用，不引入全局 evidence search。
 
-当 generic 参数或返回值进入 `dyn` 世界时，所需 adapter 必须在实例化点被构造并打包，而不是留给运行时再做 impl 搜索。
+当 template 参数或返回值进入 `dyn` 世界时，所需 adapter 必须在实例化点被构造并打包，而不是留给运行时再做 impl 搜索。
 
-## 2. Boundaries of Level-1 Generics
+## 2. Boundaries of Level-1 Checked Templates
 
-Level-1 generics may depend on ordinary HM inference, row and shape constraints, namespace-scoped named constraints, structural method obligations, operator obligations, shaped dispatch obligations, and answer type checking.
+Level-1 checked templates may depend on ordinary HM inference, row and shape constraints, namespace-scoped named constraints, structural method obligations, operator obligations, shaped dispatch obligations, and answer type checking.
 
-They may not depend on a traditional interface solver, witness search, a global named-capability solver, or full coherence rules. Named constraints are for naming and reuse only; they do not introduce global evidence search. When generic values cross into the `dyn` world, the required adapters must be constructed at the instantiation site rather than searched for at runtime.
+They may not depend on a traditional interface solver, witness search, a global named-capability solver, or full coherence rules. Named constraints are for naming and reuse only; they do not introduce global evidence search. When template values cross into the `dyn` world, the required adapters must be constructed at the instantiation site rather than searched for at runtime.
 
 ## 2.1 约束形式
 
 Chiba 不使用 `where` 子句。
 
-generic constraint 统一写在：
+template constraint 统一写在：
 
 ```chiba
 [T: X + Y + {r | name: String}]
@@ -96,7 +101,7 @@ named constraint 负责复用与错误信息；row constraint 负责直接表达
 
 Chiba does not use `where` clauses.
 
-Generic constraints are written in one place:
+Template constraints are written in one place:
 
 ```chiba
 [T: X + Y + {r | name: String}]
@@ -106,7 +111,7 @@ The rule is fixed as: N named constraints plus at most one row constraint. Named
 
 ## 3. 定义期检查
 
-generic body 在定义期不是黑盒。
+template body 在定义期不是黑盒。
 
 定义期至少需要完成：
 
@@ -114,20 +119,20 @@ generic body 在定义期不是黑盒。
 - 普通 HM unify
 - row / shape 约束生成
 - method / operator obligation 生成
-- `reset` / `shift` 的 answer type 检查
+- `reset` / `resetn` / `shift` 的 answer type 检查
 - 基本 well-formedness 检查
 
-也就是说，generic body 必须先在当前抽象参数下可类型化。
+也就是说，template body 必须先在当前抽象参数下可类型化。
 
-普通非 `extern` 函数也可以由省略参数类型触发隐式 generic。
+普通非 `extern` 函数也可以由省略参数类型触发隐式 checked template。
 
 ```chiba
 def f(a, b, c) = expr
 ```
 
-检查器为未标注参数与未标注返回值建立 fresh inference variable，并用函数体的使用点收集约束。具体类型需求直接 unify；字段访问、method call、operator、shape dispatch 等需求生成 structural obligation。如果函数边界仍有未具体化的自由变量，这些变量与其 obligation 会被自动提升为隐式 generic 参数。
+检查器为未标注参数与未标注返回值建立 fresh inference variable，并用函数体的使用点收集约束。具体类型需求直接 unify；字段访问、method call、operator、shape dispatch 等需求生成 structural obligation。如果函数边界仍有未具体化的自由变量，这些变量与其 obligation 会被自动提升为隐式 checked-template 参数。
 
-显式 generic header 仍然优先；源码写出的 `[T: ...]` 是稳定的用户可见类型参数。隐式参数是检查器生成的 synthetic 参数，主要用于解释与后端 specialization。编译器不能因为函数实际是 generic 就要求用户给普通参数补类型标注；只有 inference 与 obligation 收集失败时才需要标注。
+显式 template header 仍然优先；源码写出的 `[T: ...]` 是稳定的用户可见类型参数。隐式参数是检查器生成的 synthetic 参数，主要用于解释与后端 specialization。编译器不能因为函数实际是 checked template 就要求用户给普通参数补类型标注；只有 inference 与 obligation 收集失败时才需要标注。
 
 源码写出的 `[T]` 在定义期是 HM 环境里的显式类型变量 binder，但在函数体检查时按 rigid abstract type 处理。也就是说，`T` 会参与普通 HM 检查与 constraint generation，却不是一个可以被函数体静默解成 concrete type 的 flexible inference hole。
 
@@ -149,19 +154,19 @@ def id[T](value: T): T = value
 def map_one[T, F](value: T, convert: (T) => F): F = convert(value)
 ```
 
-若表达式本身是 diverging expression，例如 `panic()` / `todo()` 一类返回 `Never` 的表达式，则可流入任意返回类型；这是 `Never` 规则，不是 generic 的逃逸规则。
+若表达式本身是 diverging expression，例如 `panic()` / `todo()` 一类返回 `Never` 的表达式，则可流入任意返回类型；这是 `Never` 规则，不是 template 的逃逸规则。
 
-省略类型标注时使用 flexible inference variable。如果这些 variable 在函数边界处仍可合法泛化，则提升为 synthetic generic binder；如果它们落在必须具体化或不能自由泛化的位置，则要求显式标注。
+省略类型标注时使用 flexible inference variable。如果这些 variable 在函数边界处仍可合法泛化，则提升为 synthetic template binder；如果它们落在必须具体化或不能自由泛化的位置，则要求显式标注。
 
 例如 `Ref.new(None)` 的类型形状是 `Ref[Option[T]]`。如果没有标注或上下文固定 `T`，这里必须报错，不能泛化成 polymorphic mutable `Ref`。
 
-level-2 可以加入显式 flexible generic binder：
+level-2 可以加入显式 flexible template binder：
 
 ```chiba
 def f[?T](value: ?T) = ...
 ```
 
-`[?T]` 表示源码显式要求 flexible 推断。它不是 level-1 core；level-1 中 `[T]` 仍是 rigid explicit generic，省略标注才走 flexible inference path。
+`[?T]` 表示源码显式要求 flexible 推断。它不是 level-1 core；level-1 中 `[T]` 仍是 rigid explicit template 参数，省略标注才走 flexible inference path。
 
 `extern` 声明是例外：ABI 边界上的参数与返回值必须有显式 ABI 类型，不能靠隐式泛化推断。
 
@@ -177,17 +182,17 @@ def f(a: {r | name: Str}) = a.name
 def f[T: {r | name: Str}](a: T) = a.name
 ```
 
-这个简写引入 fresh synthetic generic 参数。row 约束只描述 shape obligation，不抹掉 concrete nominal identity。
+这个简写引入 fresh synthetic template 参数。row 约束只描述 shape obligation，不抹掉 concrete nominal identity。
 
 ## 3. Definition-Time Checking
 
-The generic body is not a black box at definition time. The compiler must still allocate type variables, run ordinary HM unification, generate row and shape constraints, produce method and operator obligations, check `reset` and `shift`, and validate basic well-formedness.
+The template body is not a black box at definition time. The compiler must still allocate type variables, run ordinary HM unification, generate row and shape constraints, produce method and operator obligations, check `reset` / `resetn` / `shift`, and validate basic well-formedness.
 
-In short, a generic body must already be typeable under abstract parameters before any concrete instantiation exists.
+In short, a template body must already be typeable under abstract parameters before any concrete instantiation exists.
 
-Ordinary non-`extern` functions may also become implicitly generic by omitting parameter annotations. For `def f(a, b, c) = expr`, the checker creates fresh inference variables for unannotated parameters and the unannotated return, then collects constraints from the body. Concrete requirements unify directly; field access, method calls, operators, and shape dispatch produce structural obligations. Free variables that remain at the function boundary are promoted, together with their obligations, into implicit generic parameters.
+Ordinary non-`extern` functions may also become implicit checked templates by omitting parameter annotations. For `def f(a, b, c) = expr`, the checker creates fresh inference variables for unannotated parameters and the unannotated return, then collects constraints from the body. Concrete requirements unify directly; field access, method calls, operators, and shape dispatch produce structural obligations. Free variables that remain at the function boundary are promoted, together with their obligations, into implicit checked-template parameters.
 
-Explicit generic headers still take precedence and remain stable user-visible type parameters. Implicit parameters are synthetic checker-generated parameters used for explanation and backend specialization. The compiler must not require ordinary parameter annotations merely because the inferred function is generic; annotations are only required when inference or obligation collection cannot determine the intended boundary.
+Explicit template headers still take precedence and remain stable user-visible type parameters. Implicit parameters are synthetic checker-generated parameters used for explanation and backend specialization. The compiler must not require ordinary parameter annotations merely because the inferred function is a checked template; annotations are only required when inference or obligation collection cannot determine the intended boundary.
 
 An explicit source-level `[T]` is a type-variable binder in the HM environment, but it is checked as a rigid abstract type inside the body. It participates in ordinary HM checking and constraint generation, but the body may not silently solve it to a concrete type as if it were a flexible inference hole.
 
@@ -195,21 +200,21 @@ So `[T]` belongs to both layers: at definition time it is an HM type binder used
 
 For example, `def f[T, F](value: T): F = value` is ill-typed unless some other constraint proves `T == F`. Writing `F` as the return type does not let the body manufacture an `F`, and it does not solve the rigid `F` to `T`. The valid forms are to return the same variable, such as `def id[T](value: T): T = value`, or to provide a conversion, such as `def map_one[T, F](value: T, convert: (T) => F): F = convert(value)`.
 
-A diverging expression with type `Never`, such as `panic()` or `todo()`, may flow into any return type. That is the `Never` rule, not a generic escape hatch.
+A diverging expression with type `Never`, such as `panic()` or `todo()`, may flow into any return type. That is the `Never` rule, not a template escape hatch.
 
-Omitted type annotations use flexible inference variables. If those variables remain legal to generalize at a function boundary, they are promoted to synthetic generic binders; if they appear in positions that must be concrete or cannot be freely generalized, annotations are required.
+Omitted type annotations use flexible inference variables. If those variables remain legal to generalize at a function boundary, they are promoted to synthetic template binders; if they appear in positions that must be concrete or cannot be freely generalized, annotations are required.
 
 For example, `Ref.new(None)` has shape `Ref[Option[T]]`. Without an annotation or contextual use that fixes `T`, this must be rejected rather than generalized into a polymorphic mutable `Ref`.
 
-Level-2 may add explicit flexible generic binders such as `def f[?T](value: ?T) = ...`. `[?T]` means the source explicitly requests flexible inference. It is not part of the level-1 core; in level-1, `[T]` remains a rigid explicit generic and omitted annotations are the flexible inference path.
+Level-2 may add explicit flexible template binders such as `def f[?T](value: ?T) = ...`. `[?T]` means the source explicitly requests flexible inference. It is not part of the level-1 core; in level-1, `[T]` remains a rigid explicit template parameter and omitted annotations are the flexible inference path.
 
 `extern` declarations are the exception: ABI parameters and returns must use explicit ABI types and cannot rely on implicit generalization.
 
-A row constraint on a parameter may be written as row-bound shorthand. For example, `def f(a: {r | name: Str}) = a.name` is equivalent to `def f[T: {r | name: Str}](a: T) = a.name`. The shorthand introduces a fresh synthetic generic parameter; the row bound describes a shape obligation without erasing concrete nominal identity.
+A row constraint on a parameter may be written as row-bound shorthand. For example, `def f(a: {r | name: Str}) = a.name` is equivalent to `def f[T: {r | name: Str}](a: T) = a.name`. The shorthand introduces a fresh synthetic template parameter; the row bound describes a shape obligation without erasing concrete nominal identity.
 
 ## 4. 实例化期检查
 
-当 generic 被具体实例化时，再兑现定义期积累的 structural obligation。
+当 checked template 被具体实例化时，再兑现定义期积累的 structural obligation。
 
 实例化期至少要完成：
 
@@ -222,13 +227,13 @@ A row constraint on a parameter may be written as row-bound shorthand. For examp
 
 ## 4. Instantiation-Time Checking
 
-When a generic is instantiated with concrete arguments, the compiler must discharge the structural obligations accumulated at definition time.
+When a checked template is instantiated with concrete arguments, the compiler must discharge the structural obligations accumulated at definition time.
 
 This includes field constraints, method resolution, operator resolution, and the final selection for shaped dispatch under the concrete shape. If any obligation fails, the error must be reported at the instantiation site.
 
 ## 5. Structural Obligations
 
-level-1 generic 的核心不是 interface obligation，而是 structural obligation 加 named shape contract。
+level-1 checked template 的核心不是 interface obligation，而是 structural obligation 加 named shape contract。
 
 这类 obligation 可以来自：
 
@@ -267,15 +272,15 @@ def call_len(v) = v.len()
 
 ## 5. Structural Obligations
 
-The core of a level-1 generic is not an interface obligation but a structural obligation plus named shape contracts. These obligations arise from field access, method calls, operators, and shape-based dispatch.
+The core of a level-1 checked template is not an interface obligation but a structural obligation plus named shape contracts. These obligations arise from field access, method calls, operators, and shape-based dispatch.
 
 For example, `v.x` should produce a row-style constraint such as `typeof(v) unifies with {r | x: a}`, and `v.len()` should require that `len` resolves on the receiver shape at the concrete instantiation point. Named constraints may package these requirements under stable names, but they are still discharged locally rather than by global witness search.
 
 ## 6. 与 Method / Operator / Dispatch 的关系
 
-由于 level-1 明确有 method、operator overloading、shape-based dispatch，generic 本体会天然积累 shape-dependent obligation。
+由于 level-1 明确有 method、operator overloading、shape-based dispatch，checked-template body 会天然积累 shape-dependent obligation。
 
-因此，generic 的设计必须接受下面事实：
+因此，checked template 的设计必须接受下面事实：
 
 - 并非所有决议都能在定义期完成
 - 实例化期必须参与最终确认
@@ -283,37 +288,37 @@ For example, `v.x` should produce a row-style constraint such as `typeof(v) unif
 
 ## 6. Relation to Methods, Operators, and Dispatch
 
-Because level-1 explicitly supports methods, operator overloading, and shape-based dispatch, generic bodies naturally accumulate shape-dependent obligations.
+Because level-1 explicitly supports methods, operator overloading, and shape-based dispatch, checked-template bodies naturally accumulate shape-dependent obligations.
 
 That means not every decision can be completed at definition time. Instantiation must participate in the final confirmation, and caching has to be strong enough to keep compile time under control.
 
 ## 7. 与 Row Polymorphism 的关系
 
-row 是 generic structural checking 的底层表示。
+row 是 checked-template structural checking 的底层表示。
 
-定义期的很多 generic 约束，最后会归结为：
+定义期的很多 template 约束，最后会归结为：
 
 - open row unify
 - field existence constraint
 - normalized shape compare
 
-因此，generic 的实现必须建立在 canonical row / shape 表示之上。
+因此，checked template 的实现必须建立在 canonical row / shape 表示之上。
 
 ## 7. Relation to Row Polymorphism
 
-Row and shape representations are the substrate of structural generic checking. Many generic constraints reduce to open-row unification, field-existence checks, and normalized shape comparison.
+Row and shape representations are the substrate of structural checked-template checking. Many template constraints reduce to open-row unification, field-existence checks, and normalized shape comparison.
 
-For that reason, the implementation of generics must be built on canonical row and shape representations.
+For that reason, the implementation of checked templates must be built on canonical row and shape representations.
 
 ## 8. 与 Continuation 的关系
 
-generic 与 continuation 的组合属于 level-1 的高风险区。
+checked template 与 continuation 的组合属于 level-1 的高风险区。
 
 当前建议：
 
 - 含 continuation 的表达式泛化要保守
 - continuation 默认不应被当作可任意自由泛化的普通值
-- continuation 相关 generic 规则要比普通 shape generic 更严格
+- continuation 相关 template 规则要比普通 shape template 更严格
 
 原因不是 continuation 不重要，而是它会同时耦合：
 
@@ -324,13 +329,13 @@ generic 与 continuation 的组合属于 level-1 的高风险区。
 
 ## 8. Relation to Continuations
 
-The combination of generics and continuations is a high-risk area in level-1.
+The combination of checked templates and continuations is a high-risk area in level-1.
 
-The current direction is conservative: expressions involving continuations should generalize more carefully, continuations should not be treated like ordinary freely polymorphic values, and continuation-related generic rules should be stricter than ordinary shape-generic rules because they couple answer types, arena and escape legality, value versus reference boundaries, and shaped dispatch.
+The current direction is conservative: expressions involving continuations should generalize more carefully, continuations should not be treated like ordinary freely polymorphic values, and continuation-related template rules should be stricter than ordinary shape-template rules because they couple answer types, arena and escape legality, value versus reference boundaries, and shaped dispatch.
 
 ## 9. 编译速度约束
 
-为了保证编译速度，level-1 generics 的实现需要满足：
+为了保证编译速度，level-1 checked templates 的实现需要满足：
 
 - 只为真正发生的实例化付费
 - 尽量复用 normalized shape 作为实例化 key 的一部分
@@ -345,7 +350,7 @@ The current direction is conservative: expressions involving continuations shoul
 
 ## 9. Compile-Time Constraints
 
-To preserve compile speed, level-1 generics must only pay for real instantiations, should reuse normalized shapes as part of instantiation keys, should discharge structural obligations locally whenever possible, and must avoid heavy global solvers.
+To preserve compile speed, level-1 checked templates must only pay for real instantiations, should reuse normalized shapes as part of instantiation keys, should discharge structural obligations locally whenever possible, and must avoid heavy global solvers.
 
 The practical consequence is light definition-time checking, lazy instantiation, and caching of resolution results on concrete shapes.
 
@@ -353,8 +358,8 @@ The practical consequence is light definition-time checking, lazy instantiation,
 
 本文采用如下模型：
 
-- generic 本体先被类型化
-- obligation 被挂在 generic body 上
+- checked-template body 先被类型化
+- obligation 被挂在 checked-template body 上
 - 实例化时收集 concrete type / concrete shape
 - method/operator/dispatch 在具体实例下最终确认
 - specialization 结果可缓存
@@ -369,13 +374,13 @@ The practical consequence is light definition-time checking, lazy instantiation,
 
 ## 10. Instantiation Model
 
-The model assumed here is: first type the generic body, then attach obligations to that body, then collect concrete types and shapes at instantiation time, and finally confirm method, operator, and dispatch behavior under those concrete arguments.
+The model assumed here is: first type the checked-template body, then attach obligations to that body, then collect concrete types and shapes at instantiation time, and finally confirm method, operator, and dispatch behavior under those concrete arguments.
 
 If level-2 later introduces `via namespace`, the model extends by treating the explicit behavior source as part of the instantiation context. That source may enter the monomorphization key, and specialization may inline the resolved implementation.
 
 ## 11. 非目标
 
-下列内容不是当前 level-1 generics 的首批目标：
+下列内容不是当前 level-1 checked templates 的首批目标：
 
 - traditional interface constraints
 - witness passing formalization
@@ -385,20 +390,20 @@ If level-2 later introduces `via namespace`, the model extends by treating the e
 
 ## 11. Non-Goals
 
-The first generation of level-1 generics is not trying to support a traditional interface solver, witness passing formalization, Rust-style trait solving, the old C++ template model where definition-time checking is nearly absent, or highly free continuation polymorphism.
+The first generation of level-1 checked templates is not trying to support a traditional interface solver, witness passing formalization, Rust-style trait solving, the old C++ template model where definition-time checking is nearly absent, or highly free continuation polymorphism.
 
 ## 12. 开放问题
 
 - 实例化 key 是否直接使用 normalized shape + concrete type tuple
 - `via` 来源是否总是进入实例化 key，还是仅在显式使用时进入
-- 方法解析缓存与 generic specialization 缓存是否合并
+- 方法解析缓存与 template specialization 缓存是否合并
 - 某些完全结构相同但名义类型不同的实例是否共享生成代码
-- generic × continuation 最终采用多严格的泛化限制
+- checked template × continuation 最终采用多严格的泛化限制
 
 ## 12. Open Questions
 
 - Should the instantiation key directly use `normalized shape + concrete type tuple`?
 - Should an explicit `via` source always enter the instantiation key, or only when used at the call site?
-- Should method-resolution caches and generic-specialization caches be unified?
+- Should method-resolution caches and template-specialization caches be unified?
 - Can two instances with the same structure but different nominal identities share generated code?
-- How strict should the final generalization limits be for `generic × continuation`?
+- How strict should the final generalization limits be for `checked template × continuation`?

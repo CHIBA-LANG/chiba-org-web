@@ -171,8 +171,8 @@ tokens :-
     ...规则...
 
     {
-        data Token { ... }
-        type Span { ... }
+        data Token = { ... }
+        type Span = { ... }
     }
 ```
 
@@ -318,24 +318,24 @@ tokens :-
 
 {
     // 会自动根据 Token 生成类型 TokenSpan
-    // type Span {
+    // type Span = {
     //     file : string
     //     line : i64
     //     col  : i64
     //     len  : i64
     // }
     // 
-    // type TokenSpan {
+    // type TokenSpan = {
     //     token: Token
     //     span: Span
     // }
     // 
-    // data TokenItem {
+    // data TokenItem = {
     //     TokenSpan(TokenSpan)    
     //     ErrorSpan(Error, Span)
     // }
 
-    data Token {
+    data Token = {
         KwNamespace,  KwDef,     KwType,    KwData,
         KwUnion,      KwLet,     KwIf,      KwElse,
         KwMatch,      KwExtern,  KwUnsafe,  KwReset,

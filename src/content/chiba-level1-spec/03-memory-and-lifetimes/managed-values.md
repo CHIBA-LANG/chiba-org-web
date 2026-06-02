@@ -19,7 +19,7 @@
 ## Usage
 
 ```chiba
-data User {
+data User = {
 	User(name: String, age: i32)
 }
 

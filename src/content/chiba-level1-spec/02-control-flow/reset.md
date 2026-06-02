@@ -1,13 +1,27 @@
-# `reset`
+# `reset` / `resetn`
 
 ## 语法
 
-`reset` 建立一个 delimited continuation 边界。
+`reset` 与 `resetn` 都建立 delimited continuation 边界。
 
-`reset` 也允许带 atom tag：
+```chiba
+reset {
+	...
+}
+
+resetn {
+	...
+}
+```
+
+二者都允许带 atom tag：
 
 ```chiba
 reset :tag {
+	...
+}
+
+resetn :tag {
 	...
 }
 ```
@@ -26,13 +40,19 @@ shift :tag k {
 
 ## 语义
 
-在 level-1 中，`reset` 同时具有：
+在 level-1 中，`reset` / `resetn` 同时具有：
 
-- 控制边界语义
-- answer type 边界
-- arena / region 边界
+- 控制边界语义。
+- answer type 边界。
+- arena / region 边界。
+- continuation usage color 边界。
 
-tagged `reset` 为后续需要显式指向某个控制边界的控制操作保留稳定命名入口。
+区别是：
+
+- `reset` 是 single-shot / affine delimiter；其中的 `shift` 捕获 `Cont1`，usage color 为 `1`。
+- `resetn` 是 multi-shot / repeatable delimiter；其中的 `shift` 捕获 `ContN`，usage color 为 `N`。
+
+tagged delimiter 为后续需要显式指向某个控制边界的控制操作保留稳定命名入口。`shift :tag k { ... }` 会查找匹配 tag 的 `reset` 或 `resetn`，并继承该 delimiter 的 continuation kind。
 
 ## Usage
 
@@ -42,7 +62,7 @@ let value = reset {
 }
 ```
 
-注释：最简单的 `reset` 只是显式建立一个控制边界，整个 block 的结果就是 `reset` 表达式的结果。
+注释：最简单的 `reset` 只是显式建立一个 single-shot 控制边界，整个 block 的结果就是 `reset` 表达式的结果。
 
 ```chiba
 let value = reset {
@@ -52,19 +72,23 @@ let value = reset {
 }
 ```
 
-注释：这个例子展示 `reset` 为 `shift` 提供最近的捕获边界，`k` 只恢复到当前 `reset` 为止。
+注释：这个例子展示 `reset` 为 `shift` 提供最近的 single-shot 捕获边界，`k` 的类型是 `Cont1`。
 
 ```chiba
-let value = reset :parse {
-	parse_step()
+let retry = resetn :parse {
+	shift :parse k {
+		k(1)
+		k(2)
+	}
 }
 ```
 
-注释：tagged `reset` 给控制边界一个稳定名字，供后续需要显式指向该边界的控制操作使用。
+注释：`resetn` 建立 multi-shot 捕获边界，`k` 的类型是 `ContN`，因此可以重复恢复。
 
 ## 边界
 
 需要单独明确：
 
-- `reset` 的 surface syntax 细节
-- 与普通函数调用隐式 `reset` 的关系
+- `resetn` 的 replay-safety 检查。
+- 与普通函数调用隐式 `reset` 的关系。
+- `reset` / `resetn` 与 arena promotion / escape legality 的交叉规则。

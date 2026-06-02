@@ -21,13 +21,13 @@ level-1 的 row 系统需要满足下面要求：
 - 支持 record field access
 - 支持 record update
 - 支持 open row / closed row
-- 为 structural generics 提供 shape 表示
+- 为 checked structural templates 提供 shape 表示
 - 为 field access、operator contract 与 shaped dispatch 提供 canonical shape
 - 保持较快的比较、缓存与实例化检查
 
 ## 1. Design Requirements
 
-The level-1 row system must support record field access, record update, open and closed rows, shape representations for structural generics, canonical shapes for field access, operator contracts, and shaped dispatch, and fast comparison, caching, and instantiation checking.
+The level-1 row system must support record field access, record update, open and closed rows, shape representations for checked structural templates, canonical shapes for field access, operator contracts, and shaped dispatch, and fast comparison, caching, and instantiation checking.
 
 ## 2. 基本规则
 
@@ -123,7 +123,7 @@ Implementation-wise, the normalized representation should look like `Row = (base
 - 比较稳定
 - hash 稳定
 - shaped dispatch cache 可复用
-- generics 实例化 key 可复用
+- checked-template 实例化 key 可复用
 
 row 必须 canonical。
 
@@ -136,7 +136,7 @@ row 必须 canonical。
 
 ## 5. Canonical Representation
 
-Rows must be canonical so that equality checks, hashing, shaped-dispatch caches, and generic instantiation keys remain stable.
+Rows must be canonical so that equality checks, hashing, shaped-dispatch caches, and checked-template instantiation keys remain stable.
 
 That means field order must be independent of source order, `{x: A, y: B}` and `{y: B, x: A}` must normalize to the same row, field names must map to stable field identifiers, and normalization must not depend on compilation order.
 
@@ -172,13 +172,13 @@ open row 表示在已知字段之外，仍允许其他字段存在。
 - 至少包含 `x: i64`
 - 其余字段由 row variable `r` 决定
 
-level-1 的 field access、structural generic 参数、operator contract、shaped dispatch，以及 `dyn {r | ...}` 的静态 shape contract，通常都依赖 open row。
+level-1 的 field access、checked-template 参数、operator contract、shaped dispatch，以及 `dyn {r | ...}` 的静态 shape contract，通常都依赖 open row。
 
 ## 6. Closed and Open Rows
 
 A closed row represents a field set that is sealed: it has the listed fields and forbids unknown extra fields. An open row represents a field set that has known fields but still allows additional ones through a row variable.
 
-Field access, structural generic parameters, operator contracts, shaped dispatch, and the static contract carried by `dyn {r | ...}` in level-1 usually depend on open rows.
+Field access, checked-template parameters, operator contracts, shaped dispatch, and the static contract carried by `dyn {r | ...}` in level-1 usually depend on open rows.
 
 ## 7. 基本检查规则
 
@@ -254,9 +254,9 @@ The core of level-1 row inference is unification rather than a global structural
 
 At minimum the implementation must support unifying row variables with closed rows and open rows, checking field existence and field-type consistency, and rejecting extra fields on closed rows. The full algorithm is left unspecified here, but common record, field-access, and update cases must reduce to local unification steps.
 
-## 9. 与 Structural Generics 的关系
+## 9. 与 Checked Templates 的关系
 
-level-1 generics 不依赖 interface，因此 row/shape 是 structural generics 的主要约束来源之一。
+level-1 checked templates 不依赖 interface，因此 row/shape 是 structural obligation 的主要约束来源之一。
 
 例如：
 
@@ -284,7 +284,7 @@ def get_name(v: {r | name: Str}) = v.name
 def get_name[T: {r | name: Str}](v: T) = v.name
 ```
 
-这里的 `{r | name: Str}` 是 open-row obligation，表示参数 concrete shape 必须至少提供 `name: Str`。它不是 closed record type，也不是把 nominal type 擦成匿名 record。除非源码显式复用同一个命名类型变量，多个 row shorthand 参数各自引入不同的 fresh synthetic generic。
+这里的 `{r | name: Str}` 是 open-row obligation，表示参数 concrete shape 必须至少提供 `name: Str`。它不是 closed record type，也不是把 nominal type 擦成匿名 record。除非源码显式复用同一个命名类型变量，多个 row shorthand 参数各自引入不同的 fresh synthetic template 参数。
 
 未标注参数的字段访问也会自动生成同类 row obligation：
 
@@ -294,13 +294,13 @@ def get_name(v) = v.name
 
 检查后应得到与上面相同的 shape 约束，只是字段类型可以继续由使用点推断。
 
-## 9. Relation to Structural Generics
+## 9. Relation to Checked Templates
 
-Because level-1 generics do not depend on interfaces, rows and shapes are one of their primary sources of structural constraints.
+Because level-1 checked templates do not depend on interfaces, rows and shapes are one of their primary sources of structural constraints.
 
 For example, `def get_x(v) = v.x` should infer something like `get_x : ({r | x: a}) => a`, and the concrete shape should discharge that constraint at instantiation time.
 
-Function parameters may use row-bound shorthand. For example, `def get_name(v: {r | name: Str}) = v.name` is equivalent to `def get_name[T: {r | name: Str}](v: T) = v.name`. The row is an open-row obligation: the concrete shape must provide at least `name: Str`. It is not a closed record type and does not erase nominal identity into an anonymous record. Unless the source explicitly reuses a named type variable, several row-shorthand parameters introduce separate fresh synthetic generics.
+Function parameters may use row-bound shorthand. For example, `def get_name(v: {r | name: Str}) = v.name` is equivalent to `def get_name[T: {r | name: Str}](v: T) = v.name`. The row is an open-row obligation: the concrete shape must provide at least `name: Str`. It is not a closed record type and does not erase nominal identity into an anonymous record. Unless the source explicitly reuses a named type variable, several row-shorthand parameters introduce separate fresh synthetic template parameters.
 
 Field access on an unannotated parameter generates the same kind of row obligation automatically. `def get_name(v) = v.name` should therefore infer the same shape constraint, with the field type still inferred from use.
 

@@ -29,7 +29,7 @@
 #![Metal]
 
 #[repr("C")]
-type Point {
+type Point = {
 	x: f32,
 	y: f32,
 }
@@ -43,7 +43,7 @@ type Point {
 
 ```chiba
 #[repr("C")]
-type Header {
+type Header = {
 	#[cname(field="_")]
 	field: i32,
 }
@@ -63,7 +63,7 @@ extern "c" def memcpy(dst: Ptr[u8], src: Ptr[u8], n: usize): Ptr[u8]
 #![Metal]
 
 #[repr("C")]
-type Vec2 {
+type Vec2 = {
 	x: f32,
 	y: f32,
 }
