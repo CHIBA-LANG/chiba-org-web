@@ -16,8 +16,8 @@ export async function getStaticPaths() {
     params: { slug: post.id },
     props: {
       post,
-      previousPost: linkedPosts[index - 1] ? { title: linkedPosts[index - 1].title, href: linkedPosts[index - 1].href } : undefined,
-      nextPost: linkedPosts[index + 1] ? { title: linkedPosts[index + 1].title, href: linkedPosts[index + 1].href } : undefined,
+      previousPost: linkedPosts[index + 1] ? { title: linkedPosts[index + 1].title, href: linkedPosts[index + 1].href } : undefined,
+      nextPost: linkedPosts[index - 1] ? { title: linkedPosts[index - 1].title, href: linkedPosts[index - 1].href } : undefined,
     },
   }));
 }
