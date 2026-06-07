@@ -260,6 +260,7 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 - [x] bool literal
 - [x] unit literal
 - [x] string literal
+- [x] rune literal
 - [x] cstr literal
 - [x] symbol literal
 - [x] tuple value representation
@@ -288,7 +289,7 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 - [-] `str` / `cstr` / `String` 的所有权与借用边界
 - [-] `mk_str(...)` / `mk_cstr_view(...)` / `strlen(...)` 的规范地位
 - [x] 字符串 escape / raw string / multiline string 的正式定义
-- [x] UTF-8 语义与 codepoint 级规则
+- [x] UTF-8 语义与 rune 级规则
 
 ## 10. IR 与 Lowering
 

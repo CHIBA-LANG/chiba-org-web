@@ -30,6 +30,7 @@ level-1 的类型系统需要同时满足下面要求：
 - 支持 `reset` / `resetn` / `shift` 与 answer type checking
 - 支持 aggregate usage color `1` / `N`
 - 在 level-1 就区分值与引用
+- 固定 `rune` 作为 Unicode scalar 类型，其运行时表示为 `u32`
 
 ## 1. Design Requirements
 
@@ -119,6 +120,7 @@ The governing principles are that polymorphism should concentrate on value shape
 值类型包括：
 
 - builtin scalar
+- `rune`
 - tuple
 - immutable `Array[T]`
 - 普通 `data`
@@ -154,7 +156,9 @@ level-1 需要至少显式表达：
 
 ## 4. Type Categories
 
-Value types include builtin scalars, tuples, ordinary `data`, records, union values, and function or closure values. Reference types include `Ptr[T]`, `Ref[T]`, and `UnsafeRef[T]`.
+Value types include builtin scalars, `rune`, tuples, ordinary `data`, records, union values, and function or closure values. Reference types include `Ptr[T]`, `Ref[T]`, and `UnsafeRef[T]`.
+
+`rune` is the scalar text type for one Unicode scalar value. It lowers like `u32` in runtime representation, but it is a distinct source-facing type for literals, string APIs such as `char_at`, diagnostics, and method signatures.
 
 Tuples are positional row-backed values: `(A, B)` has generated fields `_1: A` and `_2: B`. User row/record values use named fields, while tuple field identities are generated from position and preserve arity and order.
 
