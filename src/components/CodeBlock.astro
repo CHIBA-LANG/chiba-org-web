@@ -3,6 +3,7 @@ import { Code } from 'astro:components';
 import type { ThemePresets } from '@astrojs/markdown-remark/shiki';
 import BentoCard from './BentoCard.astro';
 import Label from './Label.astro';
+import SectionFrame from './SectionFrame.astro';
 import { chibaLanguage } from '../shiki/chiba-language.mjs';
 
 const chibaCodeLanguage = {
@@ -92,8 +93,8 @@ def unwrap_or(value: Option[T], fallback: T): T =
 ];
 ---
 
-<section class="home-code-examples col-span-1 md:col-span-4 border-x border-chiba-line">
-  <BentoCard class="bg-black border-y border-chiba-line">
+<SectionFrame class="home-code-examples" variant="transparent">
+  <BentoCard class="bg-code-surface border-y border-line">
     <div class="flex flex-wrap justify-between items-center gap-4 mb-6 border-b border-chiba-line pb-4">
       <Label>Chiba Examples</Label>
       <div class="flex gap-2" aria-hidden="true">
@@ -104,10 +105,10 @@ def unwrap_or(value: Option[T], fallback: T): T =
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
       {examples.map((example) => (
-        <article class="border border-chiba-line bg-chiba-container-low/70 min-w-0">
-          <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-chiba-line px-4 py-3">
+        <article class="border border-line bg-surface-low/70 min-w-0">
+          <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-3">
             <h3 class="font-mono text-xs font-bold uppercase tracking-[0.16em] text-chiba-text">{example.title}</h3>
-            <span class="font-mono text-[10px] text-chiba-gray">{example.file}</span>
+            <span class="font-mono text-[10px] text-subtle">{example.file}</span>
           </div>
           <Code
             code={example.code}
@@ -116,12 +117,12 @@ def unwrap_or(value: Option[T], fallback: T): T =
             defaultColor={false}
             class="home-shiki-code"
           />
-          <p class="border-t border-chiba-line px-4 py-3 text-xs leading-relaxed text-chiba-text-dim">{example.note}</p>
+          <p class="border-t border-line px-4 py-3 text-xs leading-relaxed text-muted">{example.note}</p>
         </article>
       ))}
     </div>
   </BentoCard>
-</section>
+</SectionFrame>
 
 <style is:global>
   .home-code-examples .astro-code {
@@ -130,7 +131,7 @@ def unwrap_or(value: Option[T], fallback: T): T =
     overflow-x: auto;
     border: 0;
     color: var(--shiki-dark);
-    background: #07070a !important;
+    background: var(--color-code-surface) !important;
     font-family: var(--font-mono);
     font-size: 0.75rem;
     line-height: 1.65;
@@ -147,7 +148,7 @@ def unwrap_or(value: Option[T], fallback: T): T =
 
   [data-theme="light"] .home-code-examples .astro-code {
     color: var(--shiki-light);
-    background: #f7f7f8 !important;
+    background: var(--color-code-surface) !important;
   }
 
   [data-theme="light"] .home-code-examples .astro-code span {

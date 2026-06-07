@@ -1,4 +1,6 @@
 ---
+import SectionFrame from './SectionFrame.astro';
+
 const pillars = [
   {
     no: '01',
@@ -26,11 +28,11 @@ const pillars = [
 ];
 ---
 
-<section class="col-span-1 md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-0 border-l border-r border-chiba-line">
+<SectionFrame innerClass="grid grid-cols-1 md:grid-cols-3 gap-0" variant="transparent">
   {pillars.map((p, i) => (
-    <article class={`relative bg-chiba-container p-8 group hover:bg-chiba-container-low transition-colors ${i < 2 ? 'border-r border-chiba-line' : ''} border-t border-b border-chiba-line`}>
+    <article class={`relative bg-surface p-8 group hover:bg-surface-low transition-colors ${i < 2 ? 'md:border-r border-line' : ''} border-y border-line`}>
       <div class="flex items-baseline justify-between mb-6">
-        <span class="font-mono text-[11px] tracking-[0.3em] text-chiba-gray">[{p.no}]</span>
+        <span class="font-mono text-[11px] tracking-[0.3em] text-subtle">[{p.no}]</span>
         <span class="font-mono text-xs text-chiba-line group-hover:text-chiba-green transition-colors">{p.sigil}</span>
       </div>
 
@@ -38,11 +40,11 @@ const pillars = [
         {p.title}
       </h3>
 
-      <p class="font-mono text-sm text-chiba-text-dim leading-relaxed mb-6">
+      <p class="font-mono text-sm text-muted leading-relaxed mb-6">
         {p.desc}
       </p>
 
-      <div class="font-mono text-[11px] text-chiba-gray border-t border-chiba-line pt-4 flex items-center gap-2">
+      <div class="font-mono text-[11px] text-subtle border-t border-line pt-4 flex items-center gap-2">
         <span class="text-chiba-green">▍</span>
         <span class="italic">{p.detail}</span>
       </div>
@@ -50,7 +52,7 @@ const pillars = [
       {p.href && p.cta && (
         <a
           href={p.href}
-          class="mt-6 inline-flex items-center gap-2 border border-chiba-line px-4 py-3 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-chiba-green hover:text-chiba-text hover:border-chiba-green/40 hover:bg-chiba-container transition-colors"
+          class="mt-6 inline-flex items-center gap-2 border border-line px-4 py-3 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-chiba-green hover:text-chiba-text hover:border-chiba-green/40 hover:bg-surface transition-colors"
         >
           <span>{p.cta}</span>
           <span>-></span>
@@ -58,4 +60,4 @@ const pillars = [
       )}
     </article>
   ))}
-</section>
+</SectionFrame>

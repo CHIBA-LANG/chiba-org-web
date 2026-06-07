@@ -1,0 +1,22 @@
+---
+import ActionLink from './ActionLink.astro';
+
+interface Props {
+  label: string;
+  title: string;
+  description?: string;
+  href?: string;
+  cta?: string;
+  class?: string;
+}
+
+const { label, title, description, href, cta, class: className = '' } = Astro.props;
+---
+
+<div class={`py-8 px-6 border-y border-line bg-surface ${className}`}>
+  <div class="font-mono text-[11px] tracking-[0.28em] text-subtle mb-4">{label}</div>
+  <h2 class="text-3xl md:text-4xl font-space font-bold tracking-[-0.04em] uppercase mb-4">{title}</h2>
+  {description && <p class="text-sm text-muted leading-relaxed font-medium mb-6">{description}</p>}
+  {href && cta && <ActionLink href={href}>{cta}</ActionLink>}
+  <slot />
+</div>

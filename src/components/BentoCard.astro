@@ -2,9 +2,9 @@
 interface Props {
   class?: string;
 }
-const { class: className = '' } = Astro.props;
+const { class: className = '', ...attrs } = Astro.props;
 ---
 
-<div class={`bg-chiba-container border border-chiba-line p-6 relative overflow-hidden h-full ${className}`}>
+<div {...attrs} class={`bg-surface border border-line p-6 relative overflow-hidden h-full ${className}`}>
   <slot />
 </div>

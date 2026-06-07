@@ -34,6 +34,34 @@
   }
 }
 
+@utility bg-surface {
+  background-color: var(--color-chiba-container);
+}
+
+@utility bg-surface-low {
+  background-color: var(--color-chiba-container-low);
+}
+
+@utility bg-surface-high {
+  background-color: var(--color-chiba-container-high);
+}
+
+@utility border-line {
+  border-color: var(--color-chiba-line);
+}
+
+@utility text-muted {
+  color: var(--color-chiba-text-dim);
+}
+
+@utility text-subtle {
+  color: var(--color-chiba-gray);
+}
+
+@utility bg-code-surface {
+  background-color: var(--color-code-surface);
+}
+
 /* ── Light (Day) theme ─────────────────────────────────────────── */
 [data-theme="light"] {
   --color-chiba-bg: #ffffff;
@@ -46,6 +74,12 @@
   --color-chiba-line: #d4d4d8;
   --color-chiba-green: #00a85a;
   --color-chiba-green-dark: #b8f3d2;
+  --color-code-surface: #f7f7f8;
+}
+
+:root:not([data-theme="light"]),
+[data-theme="dark"] {
+  --color-code-surface: #07070a;
 }
 
 [data-theme="light"] .circuit-bg {
@@ -171,6 +205,17 @@
 }
 .animate-fade-up {
   animation: fade-up 0.6s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @keyframes pulse-dot {

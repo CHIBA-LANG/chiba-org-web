@@ -1,7 +1,8 @@
 ---
 import { getCollection } from 'astro:content';
 import BentoCard from './BentoCard.astro';
-import Label from './Label.astro';
+import SectionFrame from './SectionFrame.astro';
+import SectionIntro from './SectionIntro.astro';
 import FormattedDate from './FormattedDate.astro';
 
 const posts = (await getCollection('blog'))
@@ -13,26 +14,22 @@ function truncate(str: string, max = 80) {
 }
 ---
 
-<section class="col-span-1 md:col-span-4 grid grid-cols-1 lg:grid-cols-3 gap-0 border-x border-chiba-line">
-  <div class="lg:col-span-1 py-8 px-6 border-y border-chiba-line bg-chiba-container">
-    <div class="font-mono text-[11px] tracking-[0.28em] text-chiba-gray mb-4">[ LOG / INSIGHTS ]</div>
-    <h2 class="text-3xl font-space font-bold tracking-[-0.03em] uppercase mb-3">Latest Insights</h2>
-    <p class="text-sm text-chiba-gray font-medium mb-6">Compiler notes, proof sketches, backend experiments, and deterministic systems logs.</p>
-    <a
-      href="/blog/"
-      class="inline-flex items-center gap-2 text-xs font-bold text-chiba-green uppercase tracking-[0.2em] hover:text-chiba-text transition-colors border-b border-chiba-green/30 pb-1"
-    >
-      View All Posts
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-    </a>
-  </div>
+<SectionFrame innerClass="grid grid-cols-1 lg:grid-cols-3 gap-0" variant="transparent">
+  <SectionIntro
+    label="[ LOG / INSIGHTS ]"
+    title="Latest Insights"
+    description="Compiler notes, proof sketches, backend experiments, and deterministic systems logs."
+    href="/blog/"
+    cta="View All Posts"
+    class="lg:col-span-1"
+  />
 
   <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-0">
     {posts.map((post) => (
       <a href={`/blog/${post.id}/`} class="block h-full">
-        <BentoCard class="bg-chiba-container-low group cursor-pointer hover:border-chiba-green/30 transition-colors h-full !p-0 overflow-hidden flex flex-col border-y border-chiba-line md:border-l first:md:border-l-0">
+        <BentoCard class="bg-surface-low group cursor-pointer hover:border-chiba-green/30 transition-colors h-full !p-0 overflow-hidden flex flex-col border-y border-line md:border-l first:md:border-l-0">
           {post.data.heroImage && (
-            <div class="w-full h-36 overflow-hidden shrink-0 border-b border-chiba-line">
+            <div class="w-full h-36 overflow-hidden shrink-0 border-b border-line">
               <img
                 src={post.data.heroImage}
                 alt={post.data.title}
@@ -41,16 +38,16 @@ function truncate(str: string, max = 80) {
             </div>
           )}
           <div class="flex flex-col flex-1 p-4">
-            <div class="text-[10px] font-mono uppercase tracking-[0.18em] text-chiba-gray mb-3 border-b border-chiba-line pb-3">
+            <div class="text-[10px] font-mono uppercase tracking-[0.18em] text-subtle mb-3 border-b border-line pb-3">
               <FormattedDate date={post.data.pubDate} />
             </div>
             <h3 class="text-base font-space font-bold mb-2 group-hover:text-chiba-green transition-colors leading-tight uppercase tracking-[-0.02em]">
               {post.data.title}
             </h3>
             {post.data.description && (
-              <p class="text-xs text-chiba-text-dim leading-relaxed mb-4">{truncate(post.data.description)}</p>
+              <p class="text-xs text-muted leading-relaxed mb-4">{truncate(post.data.description)}</p>
             )}
-            <div class="text-[10px] text-chiba-gray font-bold uppercase tracking-[0.18em] flex items-center gap-1 group-hover:gap-2 transition-all mt-auto pt-4 border-t border-chiba-line">
+            <div class="text-[10px] text-subtle font-bold uppercase tracking-[0.18em] flex items-center gap-1 group-hover:gap-2 transition-all mt-auto pt-4 border-t border-line">
               Read Article
               <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </div>
@@ -59,4 +56,4 @@ function truncate(str: string, max = 80) {
       </a>
     ))}
   </div>
-</section>
+</SectionFrame>

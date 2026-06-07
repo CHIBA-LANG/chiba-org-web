@@ -1,0 +1,28 @@
+---
+interface Props {
+  as?: 'section' | 'div' | 'article';
+  class?: string;
+  innerClass?: string;
+  variant?: 'surface' | 'low' | 'high' | 'transparent';
+}
+
+const {
+  as: Tag = 'section',
+  class: className = '',
+  innerClass = '',
+  variant = 'surface',
+} = Astro.props;
+
+const variants = {
+  surface: 'bg-surface',
+  low: 'bg-surface-low',
+  high: 'bg-surface-high',
+  transparent: '',
+};
+---
+
+<Tag class={`col-span-1 md:col-span-4 border-x border-line ${className}`}>
+  <div class={`${variants[variant]} ${innerClass}`}>
+    <slot />
+  </div>
+</Tag>
