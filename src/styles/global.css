@@ -8,25 +8,148 @@
 @import "@fontsource/ibm-plex-mono/700.css";
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
-  --font-space: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", ui-monospace, "Menlo", "Monaco", monospace;
+/* ──────────────────────────────────────────────────────────────
+ * Primitive layer — DO NOT use directly in components.
+ * Values only consumed by the semantic layer below.
+ * ────────────────────────────────────────────────────────────── */
+:root {
+  /* paper — warm whites, the "page" */
+  --paper-50:  #FAFAF7;
+  --paper-100: #F3F2EC;
+  --paper-200: #E9E7DE;
+  --paper-300: #DDDAD0;
 
-  --color-chiba-green: #00E676;
-  --color-chiba-green-dark: #00351b;
-  --color-chiba-bg: #07070a;
-  --color-chiba-gray: #6b6b75;
-  --color-chiba-text: #f5f5f5;
-  --color-chiba-text-dim: #9a9aa3;
-  --color-chiba-container: #07070a;
-  --color-chiba-container-low: #0b0b10;
-  --color-chiba-container-high: #11111a;
-  --color-chiba-line: #1f1f28;
+  /* ink — neutral cool blacks, the "type" */
+  --ink-50:   #F2F2F2;
+  --ink-100:  #E2E2E4;
+  --ink-200:  #D6D5D1;   /* hairline rule on paper */
+  --ink-300:  #B8B6AE;
+  --ink-400:  #8A8880;
+  --ink-500:  #5C5A55;
+  --ink-600:  #3A3935;
+  --ink-700:  #1F1E1B;
+  --ink-800:  #15140F;
+  --ink-900:  #111111;
+
+  /* oscilloscope green — single accent, low-saturation */
+  --green-100: #E6EFE9;
+  --green-200: #C9DDD0;
+  --green-300: #8FB99C;
+  --green-500: #3E8859;
+  --green-700: #1F6B3E;   /* primary accent */
+  --green-800: #14552F;
+  --green-900: #0E3A22;
+
+  /* dust red — errata / warning, used sparingly */
+  --red-700:  #8B2E2E;
+
+  /* gray — for neutral chrome (separate ramp from ink for cooler hue) */
+  --gray-100: #ECECEC;
+  --gray-300: #C7C7C7;
+  --gray-500: #888888;
+  --gray-700: #4A4A4A;
+
+  /* spacing — 8px baseline grid */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  /* type scale */
+  --type-2xs:    10px;
+  --type-xs:     11px;
+  --type-sm:     12px;
+  --type-base:   14px;
+  --type-lg:     17px;
+  --type-xl:     22px;
+  --type-2xl:    28px;
+  --type-display: clamp(48px, 8vw, 136px);
+
+  --tracking-tight:     -0.04em;
+  --tracking-normal:    0;
+  --tracking-mono-caps: 0.18em;
+  --tracking-mono-lo:   0.12em;
+
+  /* rules */
+  --rule-hair:        1px;
+  --rule-double-gap:  3px;
+
+  /* motion */
+  --motion-instant: 120ms;
+  --motion-base:    480ms;
+  --motion-slow:    900ms;
+  --ease-brand:     cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Semantic layer — exposed to Tailwind via @theme.
+ * Default = paper. Dark mode overrides further below.
+ * ────────────────────────────────────────────────────────────── */
+@theme {
+  --font-sans:  "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-space: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-mono:  "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", ui-monospace, "Menlo", "Monaco", monospace;
+
+  /* surface / text */
+  --color-chiba-bg:              #FAFAF7;
+  --color-chiba-surface:         #FFFFFF;
+  --color-chiba-surface-low:     #F3F2EC;
+  --color-chiba-surface-high:    #FFFFFF;
+  --color-chiba-text:            #111111;
+  --color-chiba-text-dim:        #3A3935;
+  --color-chiba-gray:            #5C5A55;
+  --color-chiba-line:            #D6D5D1;
+  --color-chiba-line-strong:     #B8B6AE;
+
+  /* accents */
+  --color-chiba-green:           #1F6B3E;
+  --color-chiba-green-soft:      #E6EFE9;
+  --color-chiba-green-dark:      #0E3A22;
+  --color-chiba-red:             #8B2E2E;
+
+  /* legacy aliases — keep until callers are migrated */
+  --color-chiba-container:       #FFFFFF;
+  --color-chiba-container-low:   #F3F2EC;
+  --color-chiba-container-high:  #FFFFFF;
+  --color-code-surface:          #FFFFFF;
 
   --radius-bento: 0px;
 }
 
+/* ──────────────────────────────────────────────────────────────
+ * Dark theme — opt-in via [data-theme="dark"]
+ * Inverts surface to ink, lifts green for legibility on dark.
+ * ────────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --color-chiba-bg:              #07070a;
+  --color-chiba-surface:         #07070a;
+  --color-chiba-surface-low:     #0b0b10;
+  --color-chiba-surface-high:    #11111a;
+  --color-chiba-text:            #F2F2F2;
+  --color-chiba-text-dim:        #9a9aa3;
+  --color-chiba-gray:            #6b6b75;
+  --color-chiba-line:            #1f1f28;
+  --color-chiba-line-strong:     #2e2e3a;
+
+  --color-chiba-green:           #3E8859;
+  --color-chiba-green-soft:      #142a1c;
+  --color-chiba-green-dark:      #8FB99C;
+  --color-chiba-red:             #c97070;
+
+  --color-chiba-container:       #07070a;
+  --color-chiba-container-low:   #0b0b10;
+  --color-chiba-container-high:  #11111a;
+  --color-code-surface:          #07070a;
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Base
+ * ────────────────────────────────────────────────────────────── */
 @layer base {
   body {
     @apply bg-chiba-bg text-chiba-text font-sans antialiased;
@@ -34,119 +157,46 @@
   }
 }
 
-@utility bg-surface {
-  background-color: var(--color-chiba-container);
+/* ──────────────────────────────────────────────────────────────
+ * Utilities
+ * ────────────────────────────────────────────────────────────── */
+@utility bg-surface       { background-color: var(--color-chiba-surface); }
+@utility bg-surface-low   { background-color: var(--color-chiba-surface-low); }
+@utility bg-surface-high  { background-color: var(--color-chiba-surface-high); }
+@utility border-line      { border-color: var(--color-chiba-line); }
+@utility text-muted       { color: var(--color-chiba-text-dim); }
+@utility text-subtle      { color: var(--color-chiba-gray); }
+@utility bg-code-surface  { background-color: var(--color-code-surface); }
+
+/* tabular numerics for any data row */
+@utility tabular {
+  font-variant-numeric: tabular-nums slashed-zero;
 }
 
-@utility bg-surface-low {
-  background-color: var(--color-chiba-container-low);
+/* academic paper double rule: outer border + inset outline 3px in */
+@utility double-rule {
+  border: var(--rule-hair) solid var(--color-chiba-line);
+  outline: var(--rule-hair) solid var(--color-chiba-line);
+  outline-offset: calc(-1 * var(--rule-double-gap) - var(--rule-hair));
 }
 
-@utility bg-surface-high {
-  background-color: var(--color-chiba-container-high);
+/* sub-pixel hairline — sharper than 1px solid border */
+@utility hairline {
+  box-shadow: 0 0 0 0.5px var(--color-chiba-line);
 }
 
-@utility border-line {
-  border-color: var(--color-chiba-line);
-}
-
-@utility text-muted {
-  color: var(--color-chiba-text-dim);
-}
-
-@utility text-subtle {
-  color: var(--color-chiba-gray);
-}
-
-@utility bg-code-surface {
-  background-color: var(--color-code-surface);
-}
-
-/* ── Light (Day) theme ─────────────────────────────────────────── */
-[data-theme="light"] {
-  --color-chiba-bg: #ffffff;
-  --color-chiba-text: #0a0a0d;
-  --color-chiba-text-dim: #45454d;
-  --color-chiba-gray: #666666;
-  --color-chiba-container: #ffffff;
-  --color-chiba-container-low: #fafafb;
-  --color-chiba-container-high: #fafafa;
-  --color-chiba-line: #d4d4d8;
-  --color-chiba-green: #00a85a;
-  --color-chiba-green-dark: #b8f3d2;
-  --color-code-surface: #f7f7f8;
-}
-
-:root:not([data-theme="light"]),
-[data-theme="dark"] {
-  --color-code-surface: #07070a;
-}
-
-[data-theme="light"] .circuit-bg {
-  background-image: radial-gradient(#d4d4d8 1px, transparent 1px);
-}
-
-/* Black utility overrides for light mode */
-[data-theme="light"] .bg-black {
-  background-color: #f0f0f2 !important;
-}
-[data-theme="light"] .bg-black\/40 {
-  background-color: rgba(200, 200, 210, 0.5) !important;
-}
-[data-theme="light"] .bg-black\/60 {
-  background-color: rgba(200, 200, 210, 0.6) !important;
-}
-[data-theme="light"] .bg-black\/80 {
-  background-color: rgba(220, 220, 228, 0.85) !important;
-}
-[data-theme="light"] .border-white\/5 {
-  border-color: rgba(0, 0, 0, 0.06) !important;
-}
-[data-theme="light"] .border-white\/10 {
-  border-color: rgba(0, 0, 0, 0.1) !important;
-}
-[data-theme="light"] .bg-white\/5 {
-  background-color: rgba(0, 0, 0, 0.04) !important;
-}
-[data-theme="light"] .text-chiba-gray\/80 {
-  color: #71717a !important;
-}
-/* Code block text in light mode */
-[data-theme="light"] pre code {
-  color: #3f3f46;
-}
-
-/* Hover overrides for light mode */
-[data-theme="light"] .hover\:bg-white:hover {
-  background-color: #18181b !important;
-  color: #ffffff !important;
-}
-[data-theme="light"] .hover\:text-white:hover {
-  color: #18181b !important;
-}
-
+/* ──────────────────────────────────────────────────────────────
+ * Background patterns
+ * ────────────────────────────────────────────────────────────── */
 .circuit-bg {
-  background-image: radial-gradient(var(--color-chiba-line) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image:
+    linear-gradient(to right, var(--color-chiba-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-chiba-line) 1px, transparent 1px);
+  background-size: 8px 8px;
+  background-position: -1px -1px;
+  opacity: 0.45;
 }
 
-/* ── Brutalist grain / noise overlay ───────────────────────────── */
-.grain::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 60;
-  opacity: 0.18;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-}
-[data-theme="light"] .grain::after {
-  opacity: 0.10;
-  mix-blend-mode: multiply;
-}
-
-/* ── Scanline grid background ──────────────────────────────────── */
 .scan-grid {
   background-image:
     linear-gradient(to right, var(--color-chiba-line) 1px, transparent 1px),
@@ -154,12 +204,26 @@
   background-size: 64px 64px;
   background-position: -1px -1px;
 }
-[data-theme="dark"] .scan-grid,
-:root:not([data-theme="light"]) .scan-grid {
-  opacity: 0.35;
+
+/* paper grain — subtle multiply, NOT screen-overlay */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+[data-theme="dark"] .grain::after {
+  opacity: 0.18;
+  mix-blend-mode: overlay;
 }
 
-/* ── ASCII frame helpers ───────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────
+ * ASCII frame helpers
+ * ────────────────────────────────────────────────────────────── */
 .ascii-frame {
   font-family: var(--font-mono);
   white-space: pre;
@@ -175,12 +239,13 @@
   user-select: none;
 }
 
-/* ── Sharp edges everywhere (kill leftover rounded utilities) ───── */
+/* kill leftover rounded utilities */
 .no-radius, .no-radius * { border-radius: 0 !important; }
 
-/* Selection */
+/* selection */
 ::selection { background: var(--color-chiba-green); color: var(--color-chiba-bg); }
 
+/* skip link */
 .skip-link {
   position: fixed;
   top: 0.75rem;
@@ -195,22 +260,13 @@
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
-.skip-link:focus {
-  transform: translateY(0);
-}
+.skip-link:focus { transform: translateY(0); }
 
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-up {
-  animation: fade-up 0.6s ease both;
-}
-
+/* ──────────────────────────────────────────────────────────────
+ * Reduced motion
+ * ────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
@@ -218,21 +274,60 @@
   }
 }
 
+/* status dot pulse */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+  50%      { opacity: 0.4; }
 }
 .pulse {
   animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Blog post content styles */
+/* ──────────────────────────────────────────────────────────────
+ * Hairline academic underline on inline links
+ * ────────────────────────────────────────────────────────────── */
+a {
+  text-decoration-thickness: 0.5px;
+  text-underline-offset: 4px;
+  transition: text-decoration-thickness var(--motion-instant) var(--ease-brand),
+              color var(--motion-instant) var(--ease-brand);
+}
+a:hover {
+  text-decoration-thickness: 1.5px;
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Footer dot-matrix oscilloscope scan
+ * Applied to elements with .scanline-host; uses a slim moving mask gap.
+ * ────────────────────────────────────────────────────────────── */
+@keyframes scanline-sweep {
+  0%   { mask-position: -20% 0; }
+  100% { mask-position: 120% 0; }
+}
+.scanline-host {
+  position: relative;
+  mask-image: linear-gradient(
+    90deg,
+    rgba(0,0,0,1) 0%,
+    rgba(0,0,0,1) calc(50% - 18px),
+    rgba(0,0,0,0.25) 50%,
+    rgba(0,0,0,1) calc(50% + 18px),
+    rgba(0,0,0,1) 100%
+  );
+  mask-size: 200% 100%;
+  mask-repeat: no-repeat;
+  animation: scanline-sweep 5s linear infinite;
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Prose
+ * ────────────────────────────────────────────────────────────── */
 .prose {
   @apply text-chiba-text-dim;
   max-width: 65ch;
 }
 .prose h1, .prose h2, .prose h3, .prose h4 {
-  @apply text-chiba-text font-space font-bold tracking-tight;
+  @apply text-chiba-text font-space font-semibold tracking-tight;
 }
 .prose h1 { @apply text-4xl mt-12 mb-4; }
 .prose h2 { @apply text-2xl mt-10 mb-3; }
@@ -240,18 +335,24 @@
 .prose h4 { @apply text-lg mt-6 mb-2; }
 .prose p { @apply mb-4 leading-relaxed; }
 .prose a { @apply text-chiba-green hover:underline; }
-.prose :not(pre) > code { @apply bg-chiba-container px-1.5 py-0.5 text-sm font-mono text-chiba-green border border-chiba-line; }
-.prose pre { @apply bg-black border border-chiba-line p-6 overflow-x-auto mb-6; }
-.prose pre code { @apply block bg-transparent p-0 text-chiba-text-dim border-0 text-inherit; }
+.prose :not(pre) > code {
+  @apply bg-chiba-surface-low px-1.5 py-0.5 text-sm font-mono text-chiba-green border border-chiba-line;
+}
+.prose pre {
+  @apply bg-chiba-surface border border-chiba-line p-6 overflow-x-auto mb-6;
+}
+.prose pre code {
+  @apply block bg-transparent p-0 text-chiba-text-dim border-0 text-inherit;
+}
 .prose ul, .prose ol { @apply mb-4 pl-6; }
 .prose li { @apply mb-1; }
-.prose blockquote { @apply border-l-4 border-chiba-green/50 pl-6 text-chiba-gray my-6 bg-chiba-container-low py-4; }
+.prose blockquote {
+  @apply border-l-2 border-chiba-green pl-6 text-chiba-gray my-6 bg-chiba-surface-low py-4;
+}
 .prose img { @apply w-full my-6 border border-chiba-line; }
 .prose hr { @apply border-chiba-line my-8; }
 .prose h1, .prose h2, .prose h3, .prose h4 { text-transform: uppercase; }
-.prose-docs {
-  max-width: 80ch;
-}
+.prose-docs { max-width: 80ch; }
 .prose-docs table {
   @apply w-full border-collapse my-6 text-sm;
 }
@@ -259,5 +360,5 @@
   @apply border border-chiba-line px-3 py-2 align-top;
 }
 .prose-docs th {
-  @apply text-chiba-text bg-chiba-container-low font-mono text-xs uppercase tracking-[0.14em];
+  @apply text-chiba-text bg-chiba-surface-low font-mono text-xs uppercase tracking-[0.14em];
 }

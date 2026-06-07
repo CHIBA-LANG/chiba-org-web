@@ -105,11 +105,12 @@ const websiteSchema = {
     {isHomePage && <script type="application/ld+json" set:html={JSON.stringify(softwareAppSchema)} />}
     {isHomePage && <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />}
 
-    <!-- Theme init: run before paint to avoid flash -->
+    <!-- Theme init: run before paint to avoid flash.
+         Paper (light) is the brand default; dark is opt-in via toggle or system pref. -->
     <script is:inline>
       (function () {
         var saved = localStorage.getItem('chiba-theme');
-        var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.documentElement.setAttribute('data-theme', theme);
       })();
     </script>
