@@ -292,6 +292,19 @@ def f[T: {r | name: Str}](a: T) = a.name
 
 这里的 row 约束描述 shape obligation，不抹掉 concrete nominal identity。多个参数各自写 row 简写时，默认各自引入 fresh synthetic template 参数；只有显式复用同一个命名类型变量时才表示它们必须是同一个 `T`。
 
+### 6.4 Row member contract
+
+row 约束中的成员不只服务普通 field access，也服务 checked-template 与 `dyn {r | ...}` 共用的 member contract。
+
+member contract 可由两类 concrete 事实兑现：
+
+- stored field：record field 或 nominal row field。
+- adapter member：concrete nominal receiver method 在实例化或 dyn package injection 时绑定成 adapter。
+
+字段优先。若同名字段存在但不满足 callable / signature contract，编译器必须报错，不能回退选择同名 method。
+
+这不把 row 变成 interface witness system。定义期只记录 member obligation；method adapter 只能在 concrete nominal receiver 已知，或 expected `dyn {r | ...}` 触发 adapter construction 时选择。
+
 ## 6. Rows and Shapes
 
 Level-1 supports row polymorphism. Rows provide open and closed rows, field-presence constraints, field-type constraints, normalized shape representations, and the shared shape language used by both static checked templates and adapter-carrying `dyn` packages.
@@ -299,6 +312,8 @@ Level-1 supports row polymorphism. Rows provide open and closed rows, field-pres
 The syntax direction should stay aligned with existing record-update intuition, using forms like `{base | field: value}` at the value layer and a corresponding direction at the type layer. Rows and shapes are the representation layer for methods, operators, and dispatch, not a second global subtype system. That is why rows must be canonical, fast to compare and cache, and must avoid turning into a global lattice with automatic subsumption at arbitrary positions.
 
 A row annotation on a function parameter is shorthand for a row-bound checked-template parameter. For example, `def f(a: {r | name: Str}) = a.name` is equivalent to `def f[T: {r | name: Str}](a: T) = a.name`. The row bound describes a shape obligation without erasing the concrete nominal identity. If several parameters use row shorthand independently, each one introduces its own fresh synthetic template parameter by default; they are the same `T` only when the source explicitly reuses a named type variable.
+
+A row member contract may be discharged by either a stored field or an adapter member. Stored fields come from records or nominal row fields; adapter members come from concrete nominal receiver methods selected during checked-template instantiation or `dyn {r | ...}` package injection. Fields take priority, and a field that fails the callable or signature contract is an error rather than a reason to fall back to a same-named method. This keeps row contracts useful for method-as-member behavior without turning rows into a global interface witness system.
 
 ## 7. Method、Operator 与 Shape Dispatch
 

@@ -28,4 +28,15 @@ let r = p.f(1) // 若 p 有字段 f，则等价于 (p.f)(1)
 
 field access 与 method call 的冲突按“字段优先”处理；具体类型是 record 还是名义类型，不改变这一解析顺序。
 
-row 约束只证明字段存在，不证明 nominal method 存在。若推断得到 `{r | y: ty}`，那么 `x.y` 是字段访问；`x.y(args...)` 只有在 `ty` 可调用时才走 field-callable 路线。这个 row fact 不能让编译器选择 `def X.y(self, ...)`。receiver method 仍必须依赖 concrete nominal receiver，或者在 checked-template body 中记录 method obligation，等实例化出 concrete nominal type 后再兑现。
+row 约束在表达式层形成 member obligation，而不是立即选择某个 receiver method。
+
+若推断得到 `{r | y: ty}`：
+
+- `x.y` 在定义期记录成员 `y` 的访问 obligation。
+- `x.y(args...)` 在 `ty` 可调用时记录 callable member obligation。
+- 实例化到 record 或 nominal field 时，该 obligation 由字段兑现。
+- 实例化到没有同名字段的 concrete nominal type 时，该 obligation 可由 receiver method adapter 兑现。
+
+字段仍然优先。若 concrete nominal type 同时有字段 `y` 与 method `y`，则 `x.y(args...)` 先检查字段是否 callable 且签名匹配；字段不满足时直接报错，不能偷偷回退到同名 method。
+
+这条规则不允许编译器在定义期靠 row fact 或 shape 猜 nominal identity。method adapter 只能在 concrete nominal receiver 已知，或 expected `dyn {r | ...}` package injection 需要构造 adapter 时选择。

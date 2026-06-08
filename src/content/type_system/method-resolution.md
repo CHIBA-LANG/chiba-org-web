@@ -111,9 +111,16 @@ v.m(a, b)
 
 第 3 层不做 receiver 注入；`a.b` 是整体名字。
 
-row 约束不能证明 nominal method 存在。若定义期只知道 `a` 满足 `{r | b: ty}`，那么这个事实只说明字段 `b` 存在；它可以支持 `a.b` 的 field access，也可以在 `ty` 是函数类型时支持 `(a.b)(c)` 的 field-callable 路线，但不能因此选择 `def X.b(self, ...)`。receiver method 必须依赖 concrete nominal receiver，或在 checked-template body 中生成 method obligation，等实例化出 concrete nominal type 后再兑现。
+row 约束在 level-1 中表示 row member contract，而不是全局 nominal-method witness。
 
-若 row-shaped value 需要进入 nominal method world，必须先通过显式 cast / checked conversion 得到 concrete nominal type。没有这个转换时，row fact 不参与 receiver method resolution。
+若定义期只知道 `a` 满足 `{r | b: ty}`，那么 checker 应记录成员 `b` 的 obligation。该 obligation 可以由 stored field 兑现；如果 `ty` 是 callable，也可以支持 `(a.b)(c)` 的 field-callable 路线。若实例化时 concrete receiver 是 nominal type 且没有同名字段，则同一个 member obligation 也可以由 concrete receiver method adapter 兑现。
+
+这条规则有两个硬边界：
+
+1. 字段优先。若 concrete type 同时有字段 `b` 和 receiver method `b`，必须先检查字段；字段不满足 callable / signature contract 时直接报错，不回退到 method。
+2. method adapter 只能在 concrete nominal receiver 已知时选择，或者在 expected `dyn {r | ...}` package injection 时选择；定义期不能把裸 row fact 当成全局 method witness。
+
+若 row-shaped value 需要进入某个具体 nominal type 的 method world，仍必须先通过显式 cast / checked conversion 得到 concrete nominal type。没有这个转换时，普通 receiver method resolution 不从 shape 猜 nominal identity。
 
 ## 4. Method Calls
 
@@ -123,9 +130,16 @@ The result is not decided by interface satisfaction. It is decided by nominal id
 
 For `a.b(c)`, callee resolution is layered: if `a` is a value expression with field `b`, the call is `(a.b)(c)`; otherwise, if `typeof(a)` has nominal method `b`, the call lowers to `TypeOf(a).b(a, c)`; otherwise, if `a` is a type or namespace path and `a.b` resolves as a callable item, the call is `(a.b)(c)`. The qualified-callee case does not evaluate `a` and does not inject a receiver.
 
-A row constraint does not prove that a nominal method exists. If definition-time checking only knows that `a` satisfies `{r | b: ty}`, that fact proves field availability only. It may support `a.b` as field access, and it may support `a.b(c)` through the field-callable path when `ty` is a function type, but it must not select `def X.b(self, ...)`. Receiver-method resolution requires a concrete nominal receiver, or a method obligation in a checked-template body that is discharged after instantiation produces a concrete nominal type.
+A row constraint is a row member contract, not a global nominal-method witness.
 
-If a row-shaped value needs to enter the nominal method world, it must first go through an explicit cast or checked conversion to a concrete nominal type. Without that conversion, row facts do not participate in receiver-method resolution.
+If definition-time checking only knows that `a` satisfies `{r | b: ty}`, the checker records an obligation for member `b`. That obligation may be discharged by a stored field. If `ty` is callable, it may also support `(a.b)(c)` through the field-callable path. When instantiation later produces a concrete nominal receiver and there is no same-named field, the same member obligation may also be discharged by a concrete receiver-method adapter.
+
+There are two hard boundaries:
+
+1. Fields take priority. If a concrete type has both field `b` and receiver method `b`, the field must be checked first. If the field does not satisfy the callable or signature contract, the checker reports an error instead of falling back to the method.
+2. A method adapter may be selected only when a concrete nominal receiver is known, or when expected `dyn {r | ...}` package injection builds adapters. Definition-time checking must not treat a bare row fact as a global method witness.
+
+If a row-shaped value needs to enter a concrete nominal type's method world, it must still go through an explicit cast or checked conversion to that concrete nominal type. Without that conversion, ordinary receiver-method resolution must not infer nominal identity from shape.
 
 ## 4.1 `self` 与 `Self`
 
@@ -285,15 +299,15 @@ method resolution 负责：
 - 保留 receiver 的稳定语义身份
 - 避免同 shape 不同 type 的方法世界被混成一个
 
-row / shape 仍服务于字段访问、generic obligation 与 shape-based dispatch，但不参与默认方法查找。
+row / shape 仍服务于字段访问、generic obligation、row member obligation、dynamic adapter construction 与 shape-based dispatch，但不参与默认的全局方法查找。
 
-因此 field callable 是 method resolution 之前的表达式解析结果；qualified callee 是 type / namespace path 解析结果。二者都不属于 receiver method candidate filtering。
+因此 field callable 是 receiver method resolution 之前的表达式解析结果；qualified callee 是 type / namespace path 解析结果。adapter member 则是 checked-template 实例化或 dyn injection 时，从 concrete nominal receiver method index 中选出的固定目标。三者都不能被混成“运行时按名字重新找 method”。
 
 ## 9. Relation to Rows
 
-Method resolution is built on nominal types. It chooses candidates, detects conflicts, and identifies the final implementation target, while rows and shapes remain available for field access, generic obligations, and shape-based dispatch outside the default method lookup.
+Method resolution is built on nominal types. It chooses candidates, detects conflicts, and identifies the final implementation target, while rows and shapes remain available for field access, generic obligations, row member obligations, dynamic-adapter construction, and shape-based dispatch outside default global method lookup.
 
-Therefore field-callable resolution happens before method resolution, and qualified-callee resolution happens through type or namespace path lookup. Neither is part of receiver-method candidate filtering.
+Field-callable resolution happens before receiver-method resolution, and qualified-callee resolution happens through type or namespace path lookup. Adapter members are fixed targets selected from the concrete nominal receiver-method index during checked-template instantiation or dynamic-package injection. None of these paths may degrade into runtime method lookup by name.
 
 ## 10. 与 Named Constraint / `via` 的边界
 
