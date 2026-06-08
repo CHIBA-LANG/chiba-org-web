@@ -65,3 +65,17 @@ let owned = builder.finish()
 - `char_at(n)` 以 Unicode scalar 序号为单位，返回 `rune`。
 - `rune` 是 source-facing 类型，不应在诊断里退化显示成普通 `u32`。
 - string method lowering 可使用 runtime import，但 typed / Core 层必须保留方法语义和返回类型事实。
+
+## P0 验收
+
+P0 的字符串族至少要有下面的 typed + runtime 证据：
+
+- `"abc"[0]` 返回 `u8` byte。
+- `"é"[0]` 返回 UTF-8 第一个 byte，不返回完整 rune。
+- `"é".char_at(0)` 返回 `rune`，值为 Unicode scalar `U+00E9`。
+- `String.from("é").char_at(0)` 与 `str` view 的 `char_at` 语义一致。
+- `String.new().push_rune('你').finish()` 产生对应 UTF-8 内容。
+- `c"..."` 产生 `cstr`，不参与 interpolation。
+- interpolation lowering 使用 `String` builder，按 source 顺序追加 literal segment、interpolation segment 与 rune。
+
+这些测试的判定不能在 typed / lowering 里通过字符串内容形状反推语义。literal 的 escape、rune 数量与 UTF-8 合法性由 lexer / literal parser 产出事实；后续 pass 只消费这些事实。

@@ -303,6 +303,12 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 
 ## 10. IR 与 Lowering
 
+- [x] P0 semantic gates
+	- 禁止 lexer 外字符串语义推断
+	- Project Surface / Interface Summary / TopDef gate
+	- continuation / callable storage gate
+	- method / dynamic row adapter gate
+	- CPS / backend manifest gate
 - [x] CIR 的角色与 CPS 地位
 - [x] AST → CIR lowering 总述
 - [x] BIR 的角色与抽象机地位

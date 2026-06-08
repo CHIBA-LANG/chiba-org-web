@@ -301,3 +301,33 @@ Nominal type information may still be packaged into the dynamic package, but it 
 ## 7. Non-Goals
 
 This document is not trying to specify a concrete hidden-class structure, a concrete inline-cache strategy, JIT or tracing policy, replace static generics with `dyn`, or reinterpret `dyn` as a traditional interface object with runtime global impl search.
+
+## 8. P0 验收矩阵
+
+dynamic row P0 需要同时覆盖静态 row poly、expected-type injection 与 package 内 adapter 调用。
+
+最小矩阵：
+
+- concrete record / nominal value 传给 `def f[T: {r | x: A}](v: T)`，`v.x` 走 static row access。
+- `dyn {r | x: A}` 作为 concrete dynamic package instance 传给同一个 static row poly 函数，`v.x` 走 dynamic adapter access。
+- concrete nominal value 传给 `def f(v: dyn {r | x: A})`，expected type 触发 package injection。
+- package contract 同时要求字段与方法，例如 `dyn {r | x: A, y: (B) -> C}`，其中 `x` 来自 field adapter，`y` 来自 bound receiver method adapter。
+- 同名 field 与 method 同时存在时，adapter 构造选择 field；若 contract 要求 callable 而 field 不可调用，则报错，不回退到 method。
+- package 中的方法调用使用打包时固定的 method identity 与 specialization，不做运行时全局 lookup。
+- `dyn` 反向到 nominal type 不自动发生。
+
+P0 dump / Core / CIR 中应能区分：
+
+- `StaticRowAccess`
+- `DynRowAdapterAccess`
+- `DynRowShapeAccessCandidate`
+
+最后一项只允许作为 backend optimization candidate，不改变 type rule。
+
+## 8. P0 Acceptance Matrix
+
+Dynamic row P0 must cover static row polymorphism, expected-type injection, and calls through package adapters.
+
+The minimum matrix includes concrete records or nominal values passed to `def f[T: {r | x: A}](v: T)`, dynamic packages used as concrete instances of that same static row-polymorphic function, concrete values injected into explicit `dyn {r | x: A}` parameters, contracts that combine field adapters and bound receiver-method adapters, field-first behavior when a field and method share a name, method calls through the packaged adapter identity, and rejection of automatic conversion from `dyn` back to a nominal type.
+
+Dumps and Core / CIR facts should distinguish `StaticRowAccess`, `DynRowAdapterAccess`, and `DynRowShapeAccessCandidate`; the last is only a backend optimization candidate and must not change typing rules.

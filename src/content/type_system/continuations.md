@@ -315,6 +315,32 @@ The same rules apply after storage and later call. If a continuation is placed i
 
 For `Cont1`, static repeated resume is a compiler error when usage analysis can prove it. If the repeat is only observable through erased storage or dynamic dispatch, the boxed one-shot state machine must trap on the second call. `ContN` remains repeatable, subject to replay-safety and send/world restrictions.
 
+## 10.3 Storage and call test matrix
+
+continuation / closure / function 的存储后调用必须作为 P0 验收面，而不是留给 runtime 偶然行为。
+
+至少需要覆盖：
+
+- top-level function 存入 record field 后再调用。
+- no-capture closure 存入 tuple / record 后再调用，lowering 仍可 direct function / funref / inline。
+- env closure 捕获 local / parameter / global 后存储再调用，capture facts 不丢失。
+- `Cont1` 直接 resume exactly once。
+- `Cont1` 存入 `(A) -> B` 后调用一次成功，第二次 compiler 可证明时诊断；不可证明时 boxed state machine trap。
+- `ContN` 存入 `(A) -> B` 或显式 `contN (A) -> B` 后多次调用。
+- continuation 捕获 local、global、parameter、closure capture 后恢复。
+- continuation 捕获 `Ref[T]` / `UnsafeRef[T]` 时保留 shared cell identity；`ContN` 默认 replay-unsafe，除非 rollback region 或其它 replay-safe 事实明确存在。
+- continuation 进入 send-requiring storage 或 world/thread boundary 时被拒绝。
+
+这个矩阵同样适用于 callable 通过 record update、tuple projection、return value、global/static storage 后再调用的路径。编译器不得在这些路径上把 callable storage kind 洗成普通函数。
+
+## 10.3 Storage and Call Test Matrix
+
+Storage followed by call is part of the P0 surface for continuations, closures, and functions.
+
+The minimum test matrix covers top-level functions stored in record fields, no-capture closures stored in tuples or records, environment closures with local / parameter / global captures, direct exactly-once `Cont1` resume, boxed `Cont1` through `(A) -> B` storage with second-call diagnostic or trap, repeatable `ContN` through erased or explicit storage, continuation capture of locals / globals / parameters / closure captures, shared-cell capture of `Ref[T]` and `UnsafeRef[T]`, and rejection at send-requiring storage or world/thread boundaries.
+
+The same rule applies through record update, tuple projection, return values, and global/static storage. These paths must preserve callable storage kind instead of reclassifying the value as an ordinary function.
+
 ## 11. Usage Color and Rust Reference Mapping
 
 level-1 continuation 与 callable 类型必须携带 usage color：
