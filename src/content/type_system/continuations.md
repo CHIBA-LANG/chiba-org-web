@@ -249,6 +249,66 @@ The interaction between checked templates and continuations is a high-risk area.
 
 The intended level-1 rule is to be more conservative than ordinary expressions: continuation-bearing expressions should generalize less freely, template continuations should not inherit the full polymorphic freedom of ordinary values, and continuation obligations should be checked against control context rather than shape alone.
 
+## 10.1 Callable storage
+
+continuation 可以进入 callable surface，但不能因此丢失 continuation 身份。
+
+level-1 固定下面 storage 规则：
+
+- `cont1 (A) -> B` / `Cont1[A, B]` 表示 one-shot continuation。
+- `contN (A) -> B` / `ContN[A, B]` 表示 multi-shot continuation。
+- 参数位置的 `(A) -> B` 是 checked-template callable obligation，可由 function、closure、`Cont1` 或 `ContN` 实例化，但实例化后必须保留 callable storage kind。
+- 存储位置的 `(A) -> B` lower 成 erased callable ADT，variant 至少包含 function、closure、boxed `Cont1`、`ContN`。
+- 显式 `cont1 (A) -> B` storage lower 成 boxed one-shot consumed-state machine。第一次调用 consume；第二次调用必须是 compile-time diagnostic 或 runtime trap。
+- 显式 `contN (A) -> B` storage lower 成 repeatable continuation package，可多次 resume。
+- `((A) -> B) send` 排除 `Cont1`、boxed `Cont1`、`ContN` 与所有 `!send` closure。
+
+非逃逸且静态 exactly-once 的 `Cont1` 必须 direct resume / inline / tail jump，不应分配 continuation package。逃逸或进入普通 callable storage 的 `Cont1` 才需要 boxed one-shot state machine。
+
+## 10.1 Callable Storage
+
+Continuations may enter callable surfaces, but that must not erase their continuation identity.
+
+Level-1 fixes the following storage rules:
+
+- `cont1 (A) -> B` / `Cont1[A, B]` is a one-shot continuation.
+- `contN (A) -> B` / `ContN[A, B]` is a multi-shot continuation.
+- A parameter-position `(A) -> B` is a checked-template callable obligation that may instantiate to a function, closure, `Cont1`, or `ContN`, while preserving callable storage kind after instantiation.
+- A storage-position `(A) -> B` lowers to an erased callable ADT with at least function, closure, boxed `Cont1`, and `ContN` variants.
+- Explicit `cont1 (A) -> B` storage lowers to a boxed one-shot consumed-state machine. The first call consumes it; the second call must be a compile-time diagnostic or a runtime trap.
+- Explicit `contN (A) -> B` storage lowers to a repeatable continuation package.
+- `((A) -> B) send` excludes `Cont1`, boxed `Cont1`, `ContN`, and all `!send` closures.
+
+A non-escaping statically exactly-once `Cont1` must be direct-resumed, inlined, or tail-jumped rather than allocated as a continuation package. A `Cont1` needs a boxed one-shot state machine only when it escapes or enters ordinary callable storage.
+
+## 10.2 Capture semantics
+
+continuation 捕获的是当前 delimited context 中需要重放或恢复的语言级事实，包括 local、global、parameter、closure capture 与必要的 aggregate field access。
+
+捕获行为按值类别区分：
+
+- 普通 immutable value 按 continuation kind 的 replay 需求记录。
+- global value 按其 owner namespace / static identity 捕获引用事实，不靠 source name 字符串重查。
+- parameter / local binder 按 alpha/binder id 捕获，不按裸名字捕获。
+- `Ref[T]` 与 `UnsafeRef[T]` 捕获 cell identity，采用 shared-reference 语义；multi-shot continuation 不 snapshot、copy 或 rollback 这些 cell。
+- 因此 `ContN` 捕获 `Ref[T]` / `UnsafeRef[T]` mutation context 默认 replay-unsafe，除非在明确 rollback region 或其它已证明 replay-safe 的边界内。
+
+这条规则同时覆盖普通 capture 和存储后再调用：continuation 被放进 record field、tuple field、record update field、callable return 或参数后再 resume，也必须保留同一套 capture facts。
+
+## 10.2 Capture Semantics
+
+A continuation captures the language-level facts needed to resume or replay the current delimited context: locals, globals, parameters, closure captures, and required aggregate field-access context.
+
+Capture is classified by value category:
+
+- Ordinary immutable values are recorded according to the replay needs of the continuation kind.
+- Global values are captured by owner namespace / static identity facts, not by re-resolving source-name strings.
+- Parameters and local binders are captured by alpha / binder id, not by bare names.
+- `Ref[T]` and `UnsafeRef[T]` capture cell identity with shared-reference semantics. Multi-shot continuations do not snapshot, copy, or roll back those cells.
+- Therefore `ContN` capture of `Ref[T]` / `UnsafeRef[T]` mutation context is replay-unsafe by default unless it is inside an explicit rollback region or another proven replay-safe boundary.
+
+The same rules apply after storage and later call. If a continuation is placed in a record field, tuple field, record-update field, callable return, or parameter and then resumed, the stored value must preserve the same capture facts.
+
 ## 11. Usage Color and Rust Reference Mapping
 
 level-1 continuation 与 callable 类型必须携带 usage color：

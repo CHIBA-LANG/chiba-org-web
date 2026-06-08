@@ -12,6 +12,14 @@
 - C ABI 字符串
 - 拥有型字符串值
 
+固定语义：
+
+- `str` 是 UTF-8 字符串 view / borrow surface，不拥有底层存储。
+- `String` 是拥有型 UTF-8 字符串值，可通过 builder 或 `String.from(str)` 构造。
+- `cstr` 是 ABI 字符串 view，承诺可用于 C ABI 字符串参数。
+- 三者都不是“字符数组”。索引 `s[i]` 按 byte 读取；Unicode scalar 读取走 `s.char_at(n): rune`。
+- `rune` 表示一个 Unicode scalar，运行时表示为 `u32`，不是 length-1 `String`。
+
 ## Usage
 
 ```chiba
@@ -42,3 +50,11 @@ def demo(): () = {
 
 - 三者之间的默认转换是否存在
 - `str` 是否只是 view
+
+已固定的转换边界：
+
+- `String.as_str(): str` 产生 view。
+- `String.from(s: str): String` 产生拥有型拷贝或等价拥有型值。
+- `String.to_cstr(): cstr` / ABI-specific conversion 必须明确可能的分配、NUL 检查与生命周期。
+- `c"..."` 直接产生 `cstr` literal，不是普通 `String` literal 加隐式 cast。
+- `str` / `String` 到 `cstr` 不应在任意位置隐式发生；只在明确 ABI expected type 或显式 method conversion 下允许。

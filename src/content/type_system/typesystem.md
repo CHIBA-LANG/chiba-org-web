@@ -160,6 +160,10 @@ Value types include builtin scalars, `rune`, tuples, ordinary `data`, records, u
 
 `rune` is the scalar text type for one Unicode scalar value. It lowers like `u32` in runtime representation, but it is a distinct source-facing type for literals, string APIs such as `char_at`, diagnostics, and method signatures.
 
+The type `rune` is not an alias that later stages may erase for semantic decisions. It is the type of rune literals such as `'a'` and `'你'`, the return type of `String.char_at(n)` / `str.char_at(n)`, and the argument type of `String` builder methods such as `push_rune`. Lowering may represent it as an unsigned 32-bit scalar lane, but typed AST, obligations, diagnostics, and Core facts should keep the source-facing `rune` identity.
+
+String indexing and rune indexing are deliberately separate. For `str`, `String`, and `cstr`, `s[i]` is byte indexing over UTF-8 storage. Reading a Unicode scalar uses `s.char_at(n): rune`, where `n` counts Unicode scalar values. This distinction belongs to the type system and method contract, not to a backend-specific runtime convention.
+
 Tuples are positional row-backed values: `(A, B)` has generated fields `_1: A` and `_2: B`. User row/record values use named fields, while tuple field identities are generated from position and preserve arity and order.
 
 Level-1 must distinguish value types from reference types explicitly because arena and escape rules, `send`, continuation capture, and answer-type legality all depend on that split. Continuation-related types should not be treated as a trivial subclass of ordinary values; level-1 must explicitly represent the `reset` / `resetn` boundary they belong to, the answer type of the current context, and answer-type consistency between capture and resume.

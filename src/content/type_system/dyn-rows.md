@@ -183,6 +183,70 @@ In other words, conversion from `T` to `dyn C` may happen automatically only whe
 
 The reverse direction, from `dyn C` back to `T`, may not happen automatically and must be checked explicitly.
 
+## 5.1 Adapter 构造
+
+`dyn {r | ...}` 的 adapter 在值进入 dynamic package 时构造。构造不是运行时全局搜索，而是 expected type 已知时的编译器注入：
+
+```chiba
+def use(v: dyn {r | x: i64, y: (i64) -> i64}): i64 = v.y(v.x)
+```
+
+若传入 concrete value `p: P`，编译器必须在注入点证明 `P` 能服务 contract 中的每个 entry。
+
+每个 entry 的解析顺序是：
+
+1. 先查 concrete value 的字段面。若 `P` 有字段 `x`，则 adapter entry `x` 是 field adapter。
+2. 若没有字段，再查 concrete nominal receiver method。若存在 `def P.y(self, ...)`，则 adapter entry `y` 是 bound receiver method adapter。
+3. 若字段与 method 都不存在，或签名不匹配，注入失败并在 typed / instantiation 边界报错。
+
+字段优先规则与普通 `a.b(c)` 的解析顺序一致：同名字段存在时，不能偷偷选择同名 receiver method。
+
+receiver method adapter 在打包时固定 method identity、runtime target、receiver type specialization 与参数/返回类型。对于泛型 receiver，例如 `Box[T]` 的 `def Box[T].update(self: Self, value: T): Self`，把 `Box[i64]` 注入 `dyn {r | update: ...}` 时必须先把 `Self` 和 `T` 专门化为 `Box[i64]` 与 `i64`，adapter 不得保留未兑现的字符串形状猜测。
+
+## 5.1 Adapter Construction
+
+The adapter for `dyn {r | ...}` is built at the injection site. It is not runtime global search; it is compiler packaging under a known expected type.
+
+For each contract entry, resolution is layered:
+
+1. Try the concrete value's field surface first. If the payload has a field `x`, the adapter entry is a field adapter.
+2. If no field exists, try a concrete nominal receiver method. If `def P.y(self, ...)` exists, the adapter entry is a bound receiver-method adapter.
+3. If neither path exists, or the selected entry's signature does not match the contract, injection fails at the typed or instantiation boundary.
+
+The field-first rule is the same rule used by ordinary `a.b(c)`: a same-named field prevents silently choosing a same-named receiver method.
+
+A receiver-method adapter records the chosen method identity, runtime target, receiver-type specialization, parameter types, and result type at packaging time. For a generic receiver such as `Box[T]` with `def Box[T].update(self: Self, value: T): Self`, injecting `Box[i64]` into `dyn {r | update: ...}` must specialize `Self` and `T` to `Box[i64]` and `i64` before constructing the adapter. Later passes may consume these typed facts, but they must not infer the target from string shape.
+
+## 5.2 Dynamic row polymorphism
+
+静态 row polymorphism 与 dynamic row package 共用 contract 语言，但不是同一个值表示。
+
+```chiba
+def get_x[T: {r | x: i64}](v: T): i64 = v.x
+def get_dyn_x(v: dyn {r | x: i64}): i64 = v.x
+```
+
+`get_x` 的参数位置接受 concrete nominal / record，也可以在实例化规则允许时把 `dyn {r | x: i64}` 作为一个 concrete dynamic package instance。此时 `v.x` 走 dynamic adapter access，而不是重新静态拆开 payload。
+
+`get_dyn_x` 明确要求 boxed dynamic storage；若传入 concrete value，则 expected type 触发 `T -> dyn {r | x: i64}` 注入。
+
+因此：
+
+- 静态 row poly 不要求到处隐式 box。
+- `dyn {r | ...}` 表示已经动态化的 package。
+- 反向从 `dyn` 回 concrete nominal type 不自动发生。
+- Core / CIR 应能区分 `StaticRowAccess` 与 `DynRowAdapterAccess`。
+
+## 5.2 Dynamic Row Polymorphism
+
+Static row polymorphism and dynamic row packages share a contract language, but they are not the same value representation.
+
+For a static template such as `def get_x[T: {r | x: i64}](v: T): i64 = v.x`, `T` may instantiate to a concrete nominal or record type, and may also instantiate to `dyn {r | x: i64}` when the instantiation rules accept a dynamic package as a concrete instance. In the dynamic case, `v.x` uses dynamic adapter access instead of statically opening the payload.
+
+For a function that explicitly takes `dyn {r | x: i64}`, concrete arguments are injected into boxed dynamic storage only because the expected type is already dynamic.
+
+Therefore static row polymorphism does not imply implicit boxing everywhere. `dyn {r | ...}` is an already-dynamic package, reverse conversion from `dyn` to concrete nominal type is never automatic, and Core / CIR must distinguish `StaticRowAccess` from `DynRowAdapterAccess`.
+
 ## 6. 与名义类型的关系
 
 `dyn` 不抹掉“同 shape 不同 nominal type”这个事实。

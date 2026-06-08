@@ -32,6 +32,15 @@ dyn {r | ...}
 - 对应 contract 的 adapter
 - 必要的 nominal identity / cast metadata
 
+对 `dyn {r | ...}`，adapter entry 可以来自字段，也可以来自 receiver method，但解析顺序必须固定：
+
+1. concrete payload 的字段优先。
+2. 字段不存在时，才查 concrete nominal receiver method。
+3. 同名字段存在时，不能选择同名 method。
+4. method adapter 必须在打包时绑定具体 receiver specialization。
+
+例如，若 `x: X` 有字段 `x`，并且 `X` 上有方法 `y`，那么在 expected type 为 `dyn {r | x: A, y: B -> C}` 时可以构造 dynamic row package：`x` entry 是 field adapter，`y` entry 是 bound receiver method adapter。调用 `pkg.y(arg)` 时走 package 内 adapter，不做运行时全局 method 查找。
+
 反过来，从 `dyn` 回到具体 nominal type 不能自动发生，必须显式 checked conversion。
 
 该 checked conversion 不应和普通 `as` 混用。`as` 负责显式 conversion / reinterpret boundary；`dyn` 回到具体 nominal type 的失败路径则应拥有单独 surface。
@@ -53,7 +62,12 @@ def get_name(v: dyn {r | name: String}): String = v.name
 需要单独明确：
 
 - `dyn Constraint` 与 named constraint 展开的精确对应关系
-- `dyn {r | ...}` 允许哪些 field / method surface
 - `T -> dyn C` 的自动注入发生在什么 expected-type 边界
 - `dyn C -> T` 的 checked conversion surface 如何写
 - checked conversion 失败时返回什么结果形态
+
+已固定边界：
+
+- `dyn {r | ...}` 支持 field adapter 与 bound receiver method adapter。
+- dynamic package 中的 method-like entry 是打包时选定的 adapter，不是普通 receiver method lookup。
+- adapter construction 必须消费 typed facts / method index facts；不能靠字段名或类型名字符串形状猜测。

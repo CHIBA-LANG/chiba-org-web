@@ -163,6 +163,40 @@ For a checked-template owner, `Self` includes the owner's type arguments. In `ty
 
 `Self` is not an ordinary top-level type name, not row erasure, and not a generic parameter that can be freely referenced outside a method receiver scope.
 
+## 4.2 Generic receiver specialization
+
+泛型 receiver method 在 concrete receiver 上调用时，必须先专门化 receiver header。
+
+```chiba
+type Box[T] = { value: T }
+
+def Box[T].update(self: Self, value: T): Self = {
+	{ self | value: value }
+}
+
+def main(): i64 = Box[i64]({ value: 1 }).update(42).value
+```
+
+在 `Box[i64].update` 的 call site：
+
+- method receiver header `Box[T]` 与 actual receiver `Box[i64]` 匹配。
+- substitution 是 `T := i64`。
+- `Self` 专门化为 `Box[i64]`。
+- 参数 `value: T` 专门化为 `value: i64`。
+- 返回 `Self` 专门化为 `Box[i64]`。
+
+这个 substitution 作用于嵌套 type application，例如 `Box[Pair[T, U]]` 中的 `T` / `U` 也必须递归替换。
+
+method candidate 可以通过 parsed type header / symbol table fact 匹配 base nominal identity，但不能通过 ad-hoc string split、大小写、前后缀或 debug name 形状推断语义。
+
+## 4.2 Generic Receiver Specialization
+
+A generic receiver method must specialize its receiver header before it is called on a concrete receiver.
+
+For `Box[T]` with `def Box[T].update(self: Self, value: T): Self`, a call on `Box[i64]` matches the method receiver header `Box[T]` against the actual receiver `Box[i64]`. The substitution is `T := i64`; `Self` becomes `Box[i64]`; `value: T` becomes `value: i64`; and the result `Self` becomes `Box[i64]`.
+
+The substitution applies recursively through nested type applications. A method candidate may match by parsed type-header and symbol-table facts, but semantic resolution must not depend on ad-hoc string splitting, casing, prefixes, suffixes, or debug-name shape.
+
 ## 5. Operator Overloading
 
 operator overloading 在 level-1 中属于方法系统的一部分。
