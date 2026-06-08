@@ -37,6 +37,7 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 - [x] `namespace`
 	- 文件头 `namespace x.y.z`
 	- inline `namespace x.y.z { ... }`
+- [x] namespace ownership / imported item 原始 owner 保留
 - [x] `use`
 	- 单项导入
 	- multi import
@@ -49,6 +50,10 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 	- 普通函数定义
 	- `extern` 形式
 - [x] 顶层静态值定义
+- [x] global / module init 规则
+	- 顺序依赖允许
+	- cycle 拒绝
+	- module load 时执行 init
 - [x] method-style `def Type.method(...)`
 - [x] `type`
 - [x] `data`
@@ -194,7 +199,11 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 	- 支持一个或多个 `_` 作为孔位；每个 `_` 都替换为当前 pipe 左侧值
 	- 倒数第三弱优先级
 - [x] method call surface syntax
-- [ ] `dyn Constraint` / `dyn {r | ...}` dynamic package surface
+- [x] `dyn Constraint` / `dyn {r | ...}` dynamic package surface
+	- 带 adapter 的 dynamic package
+	- field adapter 与 bound receiver method adapter
+	- expected-type injection
+	- 不做运行时全局 impl search
 - [x] named arguments
 	- 不进入，且不作为后续方向
 - [x] interpolation / format string
@@ -264,6 +273,7 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 - [x] cstr literal
 - [x] symbol literal
 - [x] tuple value representation
+- [x] ADT tuple bridge / ctor lowering contract
 - [x] string literal protocol
 - [x] string literal handler
 	- `#[string_literal("x")]`
@@ -284,8 +294,8 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 - [x] prefix string handler resolution
 - [x] raw / non-raw 与 interpolation 的组合规则
 - [x] 标准字符串允许多行
-- [ ] 去掉 `mk_str(...)` / `mk_cstr_view(...)` / `strlen(...)` 的用户语言地位
-- [ ] 字符串相关 API 改为 method surface
+- [x] 去掉 `mk_str(...)` / `mk_cstr_view(...)` / `strlen(...)` 的用户语言地位
+- [x] 字符串相关 API 改为 method surface
 - [-] `str` / `cstr` / `String` 的所有权与借用边界
 - [-] `mk_str(...)` / `mk_cstr_view(...)` / `strlen(...)` 的规范地位
 - [x] 字符串 escape / raw string / multiline string 的正式定义
@@ -298,7 +308,9 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 - [x] BIR 的角色与抽象机地位
 - [x] CIR → BIR lowering contract
 - [x] LIR 的定位与 BIR → LIR contract
-- [ ] pass placement 与层边界细化
+- [x] pass placement 与层边界细化
+- [x] Project Surface / Interface Summary / TopDef / Name Resolve / Alpha / Pattern / HM+Row / Continuation / Usage / CPS pass gate
+- [x] compiler intrinsic namespace 与 intrinsic lowering 边界
 
 ---
 
@@ -344,4 +356,4 @@ AFTER THE FIRST RELEASE THE SPEC WILL BE IN ENGLISH.
 - [ ] namespace 作为 implementation bundle
 - [ ] `via ns.path` 作为显式实现来源选择
 - [ ] named constraint 的 local HM 翻译
-- [ ] `dyn Constraint` / `dyn {r | ...}` 与 adapter-carrying dynamic package
+- [x] `dyn Constraint` / `dyn {r | ...}` 与 adapter-carrying dynamic package

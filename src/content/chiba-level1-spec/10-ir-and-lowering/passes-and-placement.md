@@ -111,6 +111,16 @@ usage analysis 应发生在 CIR。
 - 让 side data 留在 SCC context 中复用
 - 让并行与缓存边界更稳定
 
+project/frontend gate 需要在进入完整 CIR 前先稳定收口：
+
+1. Project Surface Scan：扫描 source header、namespace、use、item header、attrs、visibility，不进入 body 语义。
+2. Interface Summary Build：为 namespace 生成导出签名、type/data/union header、method/global/generic/row-bound summary。
+3. TopDef / Kind Check：检查 top-level kind、extern ABI、method receiver、entry/static/global/type header。
+4. Name Resolve：把 body 引用解析为稳定 symbol id，保留 method/operator 延迟候选。
+5. Alpha Conversion：为 local、pattern、lambda、continuation binder 分配唯一 id。
+
+这些 gate 的详细 P0 contract 见 `project-passes.md`。它们是后续 HM/row、continuation、usage、CPS 和 closure conversion 的输入，不能被 backend 临时补齐。
+
 ## 主要发生在 BIR 的内容
 
 BIR 主要承接已经确定好的控制与运行时协议，包括：

@@ -36,3 +36,5 @@ let second = p._2
 ## 边界
 
 小 tuple 的布局优化可由实现决定；但与 multi-return 的关系在语言层已固定为“复用同一 tuple 值语义”。优化不得改变 `_1`、`_2` ... 的位置字段语义。
+
+ADT constructor bridge 可以复用 tuple representation，但必须保留 constructor identity。`Ctor(a, b) <-> (:ctor, a, b)` 是 compiler intrinsic contract，不表示用户可以靠普通 tuple 字段或 tag 字符串绕过 ADT 类型检查。

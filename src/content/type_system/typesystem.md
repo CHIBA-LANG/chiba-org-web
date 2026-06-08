@@ -31,6 +31,7 @@ level-1 的类型系统需要同时满足下面要求：
 - 支持 aggregate usage color `1` / `N`
 - 在 level-1 就区分值与引用
 - 固定 `rune` 作为 Unicode scalar 类型，其运行时表示为 `u32`
+- 固定 compiler intrinsic namespace，不把 intrinsic 语义交给普通 `std` helper
 
 ## 1. Design Requirements
 
@@ -56,6 +57,7 @@ level-1 包含：
 - 与隐式 `reset` 对应的 escape / memory legality
 - level-1 并行模型所需的 `send` / `!send` / world boundary 骨架
 - 最小 Atomic 能力
+- compiler intrinsic ownership 与 ADT tuple bridge
 
 ### 2.2 Level-2
 
@@ -91,7 +93,7 @@ Level-2 then adds namespace-scoped named constraints, explicit `via namespace` b
 
 level-1 的类型检查可以概括为：
 
-`HM + nominal+shape + structural obligation + dyn packaging + answer type checking + escape legality`
+`HM + nominal+shape + structural obligation + dyn packaging + intrinsic facts + answer type checking + escape legality`
 
 level-1 采用下面的总原则：
 
@@ -106,6 +108,7 @@ level-1 采用下面的总原则：
 - behavior selection 在 level-2 中通过 `via namespace` 显式进入系统
 - named constraint 进入系统时保持 namespace 边界，不做全局传染
 - 动态值继续复用 row / named constraint 语言，但进入运行时时总是带 adapter
+- compiler intrinsic 保持独立 owner namespace，不由普通 import layer 拥有语义
 
 ## 3. Level-1 Type System at a Glance
 
@@ -156,7 +159,7 @@ level-1 需要至少显式表达：
 
 ## 4. Type Categories
 
-Value types include builtin scalars, `rune`, tuples, ordinary `data`, records, union values, and function or closure values. Reference types include `Ptr[T]`, `Ref[T]`, and `UnsafeRef[T]`.
+Value types include builtin scalars, `rune`, tuples, ordinary `data`, records, union values, function or closure values, and adapter-carrying dynamic packages. Reference types include `Ptr[T]`, `Ref[T]`, and `UnsafeRef[T]`.
 
 `rune` is the scalar text type for one Unicode scalar value. It lowers like `u32` in runtime representation, but it is a distinct source-facing type for literals, string APIs such as `char_at`, diagnostics, and method signatures.
 
@@ -165,6 +168,8 @@ The type `rune` is not an alias that later stages may erase for semantic decisio
 String indexing and rune indexing are deliberately separate. For `str`, `String`, and `cstr`, `s[i]` is byte indexing over UTF-8 storage. Reading a Unicode scalar uses `s.char_at(n): rune`, where `n` counts Unicode scalar values. This distinction belongs to the type system and method contract, not to a backend-specific runtime convention.
 
 Tuples are positional row-backed values: `(A, B)` has generated fields `_1: A` and `_2: B`. User row/record values use named fields, while tuple field identities are generated from position and preserve arity and order.
+
+ADT constructor tuple bridge is a compiler intrinsic contract, not an ordinary library function. The type system must keep constructor identity, tuple arity, payload types, and bridge roundtrip facts visible when checking `tuple_to_adt` / `adt_to_tuple`.
 
 Level-1 must distinguish value types from reference types explicitly because arena and escape rules, `send`, continuation capture, and answer-type legality all depend on that split. Continuation-related types should not be treated as a trivial subclass of ordinary values; level-1 must explicitly represent the `reset` / `resetn` boundary they belong to, the answer type of the current context, and answer-type consistency between capture and resume.
 
@@ -175,6 +180,8 @@ Ordinary values are immutable by default. This includes `Array[T]`: an array val
 A top-level `Ref[T]` is legal only when the binding is explicitly marked `#[world_local]`. It denotes one cell per world, not shared global mutable state, and it does not make `Ref[T]` become `send`. Cross-world shared mutable state should use Atomic, or `UnsafeRef[T]` at an unsafe boundary.
 
 A top-level `UnsafeRef[T]` lowers to a static mutable unsafe handle. It may be visible across worlds, but the language does not guarantee synchronization, visibility, ordering, or data-race safety for it. Those guarantees must come from an unsafe protocol or a library wrapper.
+
+Compiler intrinsics are typed by intrinsic symbol id and intrinsic kind. Later passes may lower `rune`, tuple bridge, continuation storage markers, or unsafe cast into target-specific operations, but they must not rediscover those meanings by matching source-name strings.
 
 ## 5. HM 基础层
 

@@ -55,6 +55,24 @@ level-1 支持顶层静态值。
 
 因此静态值的语义重点是“存在稳定的顶层绑定”，而不是“必须可 constexpr 求值”。
 
+顺序依赖是合法的：
+
+```chiba
+def A: i64 = 1
+def B: i64 = A + 1
+```
+
+cycle 一律拒绝：
+
+```chiba
+def X: i64 = Y
+def Y: i64 = X
+```
+
+这里的拒绝发生在 module init dependency gate，而不是等运行时递归初始化失败。
+
+顶层值 surface 收敛到 `def x: T = expr`。`def x(): T = expr` 是零参数函数，不再作为伪常量写法使用。
+
 ## Usage
 
 ```chiba
@@ -70,3 +88,7 @@ def shared_state: UnsafeRef[State] = open_shared_state()
 ```
 
 注释：`pi` 是普通静态值；`stdout_file` 是 world-local 顶层 `Ref`，初始化可发生在每个 world 的 init 阶段而非编译期常量折叠。`shared_state` 是 static mutable unsafe handle；它的同步安全不由语言保证。
+
+## 边界
+
+module init 必须保留 owner namespace、symbol id、dependency edge 与 init order。backend 可以选择 target-specific 表示，但不能重新根据名字字符串推断 global/init 语义。

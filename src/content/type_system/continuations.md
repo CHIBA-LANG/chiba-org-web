@@ -262,6 +262,8 @@ level-1 固定下面 storage 规则：
 - 显式 `cont1 (A) -> B` storage lower 成 boxed one-shot consumed-state machine。第一次调用 consume；第二次调用必须是 compile-time diagnostic 或 runtime trap。
 - 显式 `contN (A) -> B` storage lower 成 repeatable continuation package，可多次 resume。
 - `((A) -> B) send` 排除 `Cont1`、boxed `Cont1`、`ContN` 与所有 `!send` closure。
+- no-capture closure 必须优化为 direct function / funref / inline，不分配 closure env。
+- storage 后调用必须保留 callable storage kind；record field、tuple field、return value、global/static storage 中取出的 callable 调用也要走同一规则。
 
 非逃逸且静态 exactly-once 的 `Cont1` 必须 direct resume / inline / tail jump，不应分配 continuation package。逃逸或进入普通 callable storage 的 `Cont1` 才需要 boxed one-shot state machine。
 
@@ -280,6 +282,8 @@ Level-1 fixes the following storage rules:
 - `((A) -> B) send` excludes `Cont1`, boxed `Cont1`, `ContN`, and all `!send` closures.
 
 A non-escaping statically exactly-once `Cont1` must be direct-resumed, inlined, or tail-jumped rather than allocated as a continuation package. A `Cont1` needs a boxed one-shot state machine only when it escapes or enters ordinary callable storage.
+
+No-capture closures must lower to direct function / funref / inline form rather than allocating a closure environment. Calls after storage in record fields, tuple fields, return values, globals, or ordinary callable slots must preserve callable storage kind; they are not reclassified by backend name or layout.
 
 ## 10.2 Capture semantics
 
@@ -308,6 +312,8 @@ Capture is classified by value category:
 - Therefore `ContN` capture of `Ref[T]` / `UnsafeRef[T]` mutation context is replay-unsafe by default unless it is inside an explicit rollback region or another proven replay-safe boundary.
 
 The same rules apply after storage and later call. If a continuation is placed in a record field, tuple field, record-update field, callable return, or parameter and then resumed, the stored value must preserve the same capture facts.
+
+For `Cont1`, static repeated resume is a compiler error when usage analysis can prove it. If the repeat is only observable through erased storage or dynamic dispatch, the boxed one-shot state machine must trap on the second call. `ContN` remains repeatable, subject to replay-safety and send/world restrictions.
 
 ## 11. Usage Color and Rust Reference Mapping
 

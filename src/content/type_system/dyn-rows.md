@@ -235,7 +235,28 @@ def get_dyn_x(v: dyn {r | x: i64}): i64 = v.x
 - 静态 row poly 不要求到处隐式 box。
 - `dyn {r | ...}` 表示已经动态化的 package。
 - 反向从 `dyn` 回 concrete nominal type 不自动发生。
-- Core / CIR 应能区分 `StaticRowAccess` 与 `DynRowAdapterAccess`。
+- Core / CIR 应能区分 `StaticRowAccess`、`DynRowAdapterAccess` 与后端优化用的 `DynRowShapeAccessCandidate`。
+
+动态 row package 可以从普通 value 构造：
+
+```chiba
+type X = { x: i64 }
+
+def X.y(self: Self): i64 = self.x + 1
+
+def use(v: dyn {r | x: i64, y: () -> i64}): i64 = v.x + v.y()
+
+def demo(v: X): i64 = use(v)
+```
+
+在 `use(v)` 的 expected type 已经是 `dyn {r | x: i64, y: () -> i64}` 时，编译器构造 package：
+
+- payload 是 `v`
+- `x` 是 field adapter
+- `y` 是 bound receiver method adapter
+- package 带 optional nominal/debug identity
+
+调用 `v.y()` 走 package 中的 adapter，不回退到运行时全局 method lookup。
 
 ## 5.2 Dynamic Row Polymorphism
 
@@ -245,7 +266,9 @@ For a static template such as `def get_x[T: {r | x: i64}](v: T): i64 = v.x`, `T`
 
 For a function that explicitly takes `dyn {r | x: i64}`, concrete arguments are injected into boxed dynamic storage only because the expected type is already dynamic.
 
-Therefore static row polymorphism does not imply implicit boxing everywhere. `dyn {r | ...}` is an already-dynamic package, reverse conversion from `dyn` to concrete nominal type is never automatic, and Core / CIR must distinguish `StaticRowAccess` from `DynRowAdapterAccess`.
+Therefore static row polymorphism does not imply implicit boxing everywhere. `dyn {r | ...}` is an already-dynamic package, reverse conversion from `dyn` to concrete nominal type is never automatic, and Core / CIR must distinguish `StaticRowAccess`, `DynRowAdapterAccess`, and backend-only `DynRowShapeAccessCandidate`.
+
+A dynamic row package may be built from an ordinary value when the expected type is already dynamic. The package carries the payload, field adapters, bound receiver-method adapters, and optional nominal/debug identity. Calls through the package use those adapters rather than runtime global method lookup.
 
 ## 6. 与名义类型的关系
 

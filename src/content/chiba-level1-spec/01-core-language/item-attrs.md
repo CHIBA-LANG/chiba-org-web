@@ -27,6 +27,8 @@ file attrs 比 item attrs 优先
 
 item attrs 为特定定义附加额外编译含义，例如入口点、代码生成策略或后端约束。
 
+`#[entry]` 只能用于函数定义。显式 entry 在 program 内必须唯一；多个 entry 或把 entry 标到非函数上都必须报错。
+
 `#[world_local]` 可用于顶层静态值定义。特别地，顶层 `Ref[T]` 必须显式写 `#[world_local]`，表示每个 world 拥有独立 cell。需要跨 world 共享的可变状态请使用 Atomic，或在 unsafe 边界中使用 `UnsafeRef[T]`。
 
 当前方向允许 attribute 至少出现在下面这些位置：
@@ -47,4 +49,3 @@ item attrs 为特定定义附加额外编译含义，例如入口点、代码生
 ## TODO
 
 在 level-2 方向上，这类 attribute 最终应统一收敛到 macro / meta-programming 体系，而不是长期维持为多套彼此独立的元信息机制。
-
