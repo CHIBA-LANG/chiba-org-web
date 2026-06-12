@@ -19,7 +19,7 @@ level-1 中，`union` 不作为普通业务建模工具，只保留给 `#![Metal
 ```chiba
 #![Metal]
 
-union Bits {
+union Bits = {
 	u32v: u32,
 	f32v: f32,
 	_: LayoutMarker,
@@ -40,7 +40,7 @@ union Bits {
 ```chiba
 #![Metal]
 
-union CBits {
+union CBits = {
 	#[cname(field="_")]
 	field: u32,
 }
