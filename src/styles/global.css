@@ -32,7 +32,7 @@
   --ink-900:  #111111;
 
   /* oscilloscope green — single accent, low-saturation */
-  --green-100: #E6EFE9;
+  --green-100: #F6F9F7;
   --green-200: #C9DDD0;
   --green-300: #8FB99C;
   --green-500: #3E8859;
@@ -98,8 +98,8 @@
   /* surface / text */
   --color-chiba-bg:              #FAFAF7;
   --color-chiba-surface:         #FFFFFF;
-  --color-chiba-surface-low:     #F3F2EC;
-  --color-chiba-surface-high:    #FFFFFF;
+  --color-chiba-surface-low:     #F6F9F7;
+  --color-chiba-surface-high:    #1F6B3E;
   --color-chiba-text:            #111111;
   --color-chiba-text-dim:        #3A3935;
   --color-chiba-gray:            #5C5A55;
@@ -108,7 +108,7 @@
 
   /* accents */
   --color-chiba-green:           #1F6B3E;
-  --color-chiba-green-soft:      #E6EFE9;
+  --color-chiba-green-soft:      #F6F9F7;
   --color-chiba-green-dark:      #0E3A22;
   --color-chiba-red:             #8B2E2E;
 

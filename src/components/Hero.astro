@@ -1,5 +1,7 @@
 ---
-import ShakuhachiStack from './ShakuhachiStack.astro';
+import { Code } from 'astro:components';
+import type { ThemePresets } from '@astrojs/markdown-remark/shiki';
+import { chibaLanguage } from '../shiki/chiba-language.mjs';
 
 const stats = [
   { k: 'helloworld binary',   v: '4.2 KB' },
@@ -7,30 +9,148 @@ const stats = [
   { k: 'bootstrap',   v: '8s' },
   { k: 'host',     v: 'self' },
 ];
+
+const chibaCodeLanguage = {
+  ...chibaLanguage.grammar,
+  name: chibaLanguage.id,
+  aliases: chibaLanguage.aliases,
+};
+
+const codeThemes: Record<'light' | 'dark', ThemePresets> = {
+  light: 'github-light',
+  dark: 'github-dark',
+};
+
+const examples = [
+  {
+    title: 'Delimited Continuation',
+    file: 'answer.chiba',
+    note: [
+      'reset marks an answer boundary; shift captures the surrounding context as a first-class value k.',
+      'Calling k twice replays the same continuation — Chiba tracks usage (one-shot vs multi-shot) in the type, so the compiler refuses unsafe replay statically.',
+      'Control is a value with a type, not a hidden runtime bargain: no exception tables, no setjmp, no implicit allocator.',
+    ],
+    code: `def choose(): i64 =
+    reset {
+      let x = shift k {
+        k(20) + k(22)
+      }
+      x + 1
+    }`,
+  },
+  {
+    title: 'Inline ASM',
+    file: 'store64.chiba',
+    note: [
+      'asm blocks bind named source values to specific registers in a single declaration — no separate constraint mini-language.',
+      'The return clause (rax) is part of the surface type: the compiler can verify that the asm body actually defines the value it claims.',
+      'unsafe is a lexical scope, not a global escape hatch — every machine-level operation stays visible and auditable in the source.',
+    ],
+    code: `def store64(ptr: i64, idx: i64, val: i64): *u8 =
+    unsafe {
+      asm (ptr: rdi, idx: rsi, val: rdx) : (rax) => {
+          "mov [rdi + rsi*8], rdx"
+          "xor eax, eax"
+      }
+    }`,
+  },
+  {
+    title: 'Method',
+    file: 'slice.chiba',
+    note: [
+      'Methods are ordinary def items qualified by a receiver type — there is no vtable, no hidden self pointer dance.',
+      'Calls like s.at(3) lower to a direct call to Slice.at(s, 3); resolution is fully static and monomorphic.',
+      'No object tax: the layout of Slice is exactly { ptr, len } in memory, with no header, no dispatch slot, no padding for OOP.',
+    ],
+    code: `type Slice = { ptr: *u8, len: usize }
+
+def Slice.at(self: Slice, index: usize): u8 =
+    unsafe { self.ptr[index] }
+
+def main(): u8 = {
+    let s = Slice { ptr: 0x1000, len: 10 }
+    s.at(3)
+}`,
+  },
+  {
+    title: 'Row Poly',
+    file: 'shape.chiba',
+    note: [
+      '{r | x: i64} reads as "any record with at least an x field of type i64, and a tail r of other fields".',
+      'The function works for every record shape that satisfies the constraint, without listing them — structurally, not nominally.',
+      'Returning {r | x: i64} preserves the caller\'s extra fields: row variables carry the rest of the record through the call.',
+    ],
+    code: `def x_of(point: {r | x: i64}): i64 =
+    point.x
+
+def move_right(point: {r | x: i64}, dx: i64): {r | x: i64} =
+    {point | x: point.x + dx}`,
+  },
+  {
+    title: 'Pattern Matching',
+    file: 'option.chiba',
+    note: [
+      'data declarations are closed sums; match arms destructure constructors directly, no boilerplate accessors.',
+      'Exhaustiveness is checked at type time — forgetting None is a compile error, not a runtime branch.',
+      'Each arm is an expression, so match itself returns a value: control and data flow are the same shape.',
+    ],
+    code: `data Option[T] { Some(T), None }
+
+def unwrap_or(value: Option[T], fallback: T): T =
+    match value {
+      Some(x) => x
+      None => fallback
+    }`,
+  },
+  {
+    title: 'Pipe',
+    file: 'pipeline.chiba',
+    note: [
+      'x |> f(args) desugars to f(x, args) — pure syntactic rewrite, no method dispatch, no implicit boxing.',
+      'Dataflow reads top-to-bottom in the order it executes, while each call remains an ordinary function call you can grep for.',
+      'Because |> is sugar, the optimizer sees a flat call chain and inlines through it like any other code.',
+    ],
+    code: `def normalize(name: String): String =
+    name |>
+      trim() |>
+      lowercase() |>
+      replace("_", "-") |>
+      intern()`,
+  },
+];
 ---
 
 <section class="col-span-1 md:col-span-4">
-  <div class="relative border border-chiba-line bg-chiba-container overflow-hidden">
-    <!-- ascii top rule -->
-    <div class="ascii-rule text-[10px] px-4 pt-3 flex items-center gap-3">
-      <span class="text-chiba-gray">┌─ syst.arch / level-0 bootstrapped</span>
-      <span class="flex-1 text-chiba-line">─────────────────────────────────────────────────────────────────────────────────────────────────────</span>
-      <span class="text-chiba-gray">┐</span>
+  <div class="hero-frame relative border border-chiba-line bg-chiba-container overflow-hidden">
+    <!-- top rule: bracket · label · spec tag · bracket -->
+    <div class="hero-rule hero-rule--top">
+      <span class="hero-rule__bracket">┌</span>
+      <span class="hero-rule__line" aria-hidden="true"></span>
+      <span class="hero-rule__label">
+        <span class="text-chiba-green">▍</span>
+        <span>chiba</span>
+        <span class="text-chiba-gray">·</span>
+        <span>metal-level functional</span>
+      </span>
+      <span class="hero-rule__line" aria-hidden="true"></span>
+      <span class="hero-rule__tag">spec / v0.6.13</span>
+      <span class="hero-rule__line" aria-hidden="true"></span>
+      <span class="hero-rule__bracket">┐</span>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-0 min-h-[560px]">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-0 min-h-120">
       <!-- ── LEFT ───────────────────────────────────────────── -->
-      <div class="lg:col-span-7 p-8 md:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-chiba-line relative">
+      <div class="lg:col-span-6 p-8 md:p-10 flex flex-col justify-between lg:border-b-0 border-chiba-line relative">
         <div class="absolute inset-0 scan-grid opacity-[0.07] pointer-events-none"></div>
 
         <div class="relative z-10">
-          <h1 class="font-sans font-bold uppercase tracking-[-0.04em] leading-[0.92] text-chiba-text text-6xl md:text-7xl lg:text-[8.5rem]">
+          <h1 class="font-sans font-bold uppercase tracking-[-0.035em] leading-[0.95] text-chiba-text text-5xl md:text-6xl lg:text-[5.5rem] xl:text-[6.25rem]">
             Metal-level FP<br/>
             <span class="text-chiba-green">Zero Runtime.</span>
           </h1>
 
           <!-- etymology / chiba origin (left side, primary) -->
-          <div class="mt-10 inline-flex flex-col font-mono text-[12px] leading-[1.5] text-chiba-text-dim border-l-2 border-chiba-green pl-4 py-1 max-w-xl">
+          <div class="mt-8 inline-flex flex-col font-mono text-[12px] leading-normal text-chiba-text-dim border-l-2 border-chiba-green pl-4 py-1 max-w-xl">
             <span><span class="text-chiba-text">CHIBA</span> <span class="text-chiba-gray">/tʃiːbɑː/</span> <span class="text-chiba-gray">←</span> <span class="text-chiba-green">尺八</span> <span class="text-chiba-gray">·</span> shakuhachi</span>
             <span class="text-chiba-gray">a five-holed bamboo flute. one breath. one tone. no waste.</span>
           </div>
@@ -71,27 +191,252 @@ const stats = [
         </div>
       </div>
 
-      <!-- ── RIGHT (WebGL, PC only) ─────────────────────────── -->
-      <div class="lg:col-span-5 relative bg-chiba-bg overflow-hidden hidden lg:block">
+      <!-- ── RIGHT (Chiba Examples editor, PC only) ─────────── -->
+      <aside class="lg:col-span-6 relative m-2 overflow-hidden hidden lg:flex flex-col">
         <div class="absolute inset-0 scan-grid opacity-[0.04] pointer-events-none"></div>
 
-        <!-- corner markers -->
-        <div class="absolute top-3 left-3 font-mono text-[10px] text-chiba-gray uppercase tracking-[0.2em] z-10">
-          structure / void
-        </div>
-        <div class="absolute bottom-3 right-3 font-mono text-[10px] text-chiba-gray uppercase tracking-[0.2em] z-10 text-right">
-          chiba.stack · 6 layers
-        </div>
+        <!-- editor frame: fills the aside with a single uniform inset -->
+        <div
+          class="hero-snippet relative z-10 m-4 flex-1 flex flex-col border border-chiba-line bg-code-surface min-h-0"
+          data-hero-editor
+        >
+          <!-- title row -->
+          <div class="flex items-baseline justify-between gap-3 border-b border-chiba-line px-4 py-3">
+            <h2 class="font-sans font-bold uppercase tracking-[-0.01em] text-chiba-text text-lg leading-tight" data-hero-title>
+              {examples[0].title}
+            </h2>
+            <span class="font-mono text-[10px] uppercase tracking-[0.16em] text-chiba-gray shrink-0" data-hero-file>
+              {examples[0].file}
+            </span>
+          </div>
 
-        <ShakuhachiStack />
-      </div>
+          <!-- body: vertical file list + code -->
+          <div class="flex-1 min-h-0 flex">
+            <!-- vertical file list -->
+            <nav
+              class="shrink-0 flex flex-col border-r border-chiba-line bg-chiba-container/40 select-none"
+              role="tablist"
+              aria-label="Chiba code examples"
+            >
+              {examples.map((ex, i) => (
+                <button
+                  type="button"
+                  role="tab"
+                  data-hero-tab={i}
+                  aria-selected={i === 0 ? 'true' : 'false'}
+                  class={`hero-tab group flex-1 min-h-12 flex items-center gap-2 px-3 text-left border-b border-chiba-line/60 last:border-b-0 font-mono text-[10px] uppercase tracking-[0.14em] transition-colors ${i === 0 ? '' : 'text-chiba-gray hover:text-chiba-text'}`}
+                >
+                  <span class="font-mono text-[10px] opacity-70">{String(i + 1).padStart(2, '0')}</span>
+                  <span class="truncate">{ex.file.replace('.chiba', '')}</span>
+                </button>
+              ))}
+            </nav>
+
+            <!-- code + inline note -->
+            <div class="relative flex-1 min-w-0 flex flex-col">
+              <!-- code panels stacked in a single grid cell — no absolute positioning -->
+              <div class="hero-panels basis-1/2 grow shrink min-h-0">
+                {examples.map((ex, i) => {
+                  const lineCount = ex.code.split('\n').length;
+                  return (
+                    <div
+                      data-hero-panel={i}
+                      hidden={i !== 0}
+                      class="hero-panel flex min-h-0"
+                      role="tabpanel"
+                      aria-label={`${ex.title} example`}
+                    >
+                      <div class="shrink-0 select-none border-r border-chiba-line bg-chiba-container/30 py-3 px-2 text-right font-mono text-[10px] leading-[1.65] text-chiba-gray/70">
+                        {Array.from({ length: lineCount }, (_, n) => (
+                          <div>{String(n + 1).padStart(2, '0')}</div>
+                        ))}
+                      </div>
+                      <div class="flex-1 min-w-0 overflow-auto">
+                        <Code
+                          code={ex.code}
+                          lang={chibaCodeLanguage}
+                          themes={codeThemes}
+                          defaultColor={false}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <!-- inline note region, ~50% of editor height -->
+              <div class="basis-1/2 grow shrink min-h-0 border-t-2 border-chiba-green/40 bg-chiba-container/30 flex flex-col">
+                <div class="flex items-center justify-between gap-3 px-4 py-2 border-b border-chiba-line/60">
+                  <span class="font-mono text-[9px] uppercase tracking-[0.22em] text-chiba-green">note ▸ why it matters</span>
+                  <span class="font-mono text-[9px] uppercase tracking-[0.2em] text-chiba-gray" data-hero-spec>chiba/level-1</span>
+                </div>
+                <div
+                  class="flex-1 min-h-0 overflow-auto px-5 py-4 text-[15px] leading-[1.7] text-chiba-text-dim space-y-3"
+                  data-hero-note
+                >
+                  {examples[0].note.map((para) => (
+                    <p>{para}</p>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
 
-    <!-- ascii bottom rule -->
-    <div class="ascii-rule text-[10px] px-4 pb-3 flex items-center gap-3">
-      <span class="text-chiba-gray">└─</span>
-      <span class="flex-1 text-chiba-line">─────────────────────────────────────────────────────────────────────────────────────────────────────</span>
-      <span class="text-chiba-gray">─┘</span>
+    <!-- bottom rule -->
+    <div class="hero-rule hero-rule--bottom">
+      <span class="hero-rule__bracket">└</span>
+      <span class="hero-rule__line" aria-hidden="true"></span>
+      <span class="hero-rule__tag">
+        <span class="w-1 h-1 bg-chiba-green inline-block pulse mr-2 align-middle"></span>
+        0 deps · self-hosted
+      </span>
+      <span class="hero-rule__line" aria-hidden="true"></span>
+      <span class="hero-rule__bracket">┘</span>
     </div>
   </div>
 </section>
+
+<script is:inline define:vars={{ exampleMeta: examples.map(e => ({ title: e.title, note: e.note, file: e.file })) }}>
+  const root = document.querySelector('[data-hero-editor]');
+  if (root) {
+    const tabs = root.querySelectorAll('[data-hero-tab]');
+    const panels = root.querySelectorAll('[data-hero-panel]');
+    const titleEl = root.querySelector('[data-hero-title]');
+    const fileEl = root.querySelector('[data-hero-file]');
+    const noteEl = root.querySelector('[data-hero-note]');
+    const activate = (idx) => {
+      tabs.forEach((t) => {
+        const isActive = Number(t.getAttribute('data-hero-tab')) === idx;
+        t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+      panels.forEach((p) => {
+        const isActive = Number(p.getAttribute('data-hero-panel')) === idx;
+        if (isActive) p.removeAttribute('hidden');
+        else p.setAttribute('hidden', '');
+      });
+      if (titleEl) titleEl.textContent = exampleMeta[idx].title;
+      if (fileEl) fileEl.textContent = exampleMeta[idx].file;
+      if (noteEl) {
+        noteEl.innerHTML = '';
+        for (const para of exampleMeta[idx].note) {
+          const p = document.createElement('p');
+          p.textContent = para;
+          noteEl.appendChild(p);
+        }
+      }
+    };
+    tabs.forEach((t) => {
+      t.addEventListener('click', () => activate(Number(t.getAttribute('data-hero-tab'))));
+    });
+    let i = 0;
+    let timer = setInterval(tick, 4200);
+    function tick() {
+      i = (i + 1) % tabs.length;
+      activate(i);
+    }
+    root.addEventListener('mouseenter', () => clearInterval(timer));
+    root.addEventListener('mouseleave', () => { timer = setInterval(tick, 4200); });
+  }
+</script>
+
+<style is:global>
+  /* hero frame rule — bracket · responsive line · label · line · bracket */
+  .hero-rule {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1;
+    color: var(--color-chiba-gray);
+    user-select: none;
+  }
+  .hero-rule--top    { padding-top: 0.75rem; }
+  .hero-rule--bottom { padding-bottom: 0.75rem; padding-top: 0.25rem; }
+  .hero-rule__bracket {
+    color: var(--color-chiba-line-strong);
+    font-size: 12px;
+    line-height: 1;
+  }
+  .hero-rule__line {
+    flex: 1 1 0;
+    min-width: 0.5rem;
+    height: 1px;
+    background: var(--color-chiba-line);
+  }
+  .hero-rule__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--color-chiba-text);
+    white-space: nowrap;
+  }
+  .hero-rule__tag {
+    display: inline-flex;
+    align-items: center;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--color-chiba-gray);
+    white-space: nowrap;
+  }
+
+  .hero-snippet .astro-code {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    background: transparent !important;
+    color: var(--shiki-dark);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.65;
+    overflow: visible;
+  }
+  /* stack all code panels in a single grid cell so the visible one fills it naturally */
+  .hero-panels {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+  .hero-panels > .hero-panel {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 0;
+  }
+  .hero-panels > .hero-panel[hidden] {
+    display: none;
+  }
+  .hero-snippet .astro-code span {
+    color: var(--shiki-dark);
+  }
+  .hero-snippet .astro-code code {
+    display: block;
+    min-width: max-content;
+  }
+  [data-theme="light"] .hero-snippet .astro-code,
+  [data-theme="light"] .hero-snippet .astro-code span {
+    color: var(--shiki-light);
+  }
+  .hero-tab {
+    color: var(--color-chiba-gray);
+    background: transparent;
+  }
+  .hero-tab[aria-selected="true"] {
+    color: #ffffff;
+    background: var(--color-chiba-green);
+    border-color: var(--color-chiba-green);
+  }
+  .hero-tab[aria-selected="true"] > span {
+    opacity: 1;
+    color: #ffffff;
+  }
+  .hero-tab:not([aria-selected="true"]):hover {
+    color: var(--color-chiba-text);
+    background: var(--color-chiba-container);
+  }
+</style>
